@@ -3,6 +3,7 @@ from config import Config
 from extensions import db
 from routes.auth import auth_bp
 from routes.profile import profile_bp
+from routes.posts import posts_bp
 
 import models
 
@@ -15,6 +16,7 @@ def create_app():
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(profile_bp)
+    app.register_blueprint(posts_bp)
 
     @app.route("/")
     def home():
