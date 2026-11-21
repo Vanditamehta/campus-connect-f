@@ -951,3 +951,32 @@ hr {
         font-size: 1.6rem;
     }
 }
+
+/* CONNECTION AVATAR */
+
+.connection-avatar {
+    width: 54px;
+    height: 54px;
+    min-width: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #B96887, #E98BAA);
+    color: #21151D;
+    font-weight: 800;
+    font-size: 1rem;
+    box-shadow: 0 4px 14px rgba(233,139,170,.16);
+}
+
+.empty-state-icon {
+    width: 65px;
+    height: 65px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    background: rgba(233,139,170,.14);
+    color: var(--primary-light);
+    font-size: 1.8rem;
+}
