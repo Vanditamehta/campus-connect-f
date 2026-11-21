@@ -61,3 +61,39 @@ class Post(db.Model):
     )
 
     author = db.relationship("User", backref="posts")
+
+
+class Connection(db.Model):
+    __tablename__ = "connection"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    follower_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    followed_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc)
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "follower_id",
+            "followed_id",
+            name="unique_follow_relationship"
+        ),
+        db.CheckConstraint(
+            "follower_id != followed_id",
+            name="prevent_self_follow"
+        ),
+    )
