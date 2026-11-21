@@ -1,0 +1,132 @@
+
+{% extends "base.html" %}
+
+{% block title %}CampusConnect | Student Networking{% endblock %}
+
+{% block content %}
+
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-7">
+                <span class="hero-label">
+                    <i class="bi bi-stars"></i> Your campus, your community
+                </span>
+
+                <h1 class="hero-title mt-4">
+                    Your next opportunity starts with
+                    <span>connection.</span>
+                </h1>
+
+                <p class="hero-description mt-4">
+                    Meet students who share your interests, showcase your skills,
+                    celebrate achievements and build meaningful connections
+                    across your campus.
+                </p>
+
+                <div class="d-flex flex-wrap gap-3 mt-4">
+                    <a href="/register" class="btn btn-primary btn-lg rounded-pill px-4">
+                        Get Started <i class="bi bi-arrow-right ms-2"></i>
+                    </a>
+                    <a href="/login" class="btn btn-outline-dark btn-lg rounded-pill px-4">
+                        Sign In
+                    </a>
+                </div>
+
+                <div class="hero-trust mt-4">
+                    <i class="bi bi-check-circle-fill"></i>
+                    Made for student communities
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="hero-visual">
+                    <div class="visual-circle circle-one"></div>
+                    <div class="visual-circle circle-two"></div>
+
+                    <div class="visual-card main-visual-card">
+                        <div class="visual-icon">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <h3>Find your people.</h3>
+                        <p>Discover students with similar interests and skills.</p>
+                    </div>
+
+                    <div class="floating-card floating-top">
+                        <i class="bi bi-lightbulb-fill"></i>
+                        Share ideas
+                    </div>
+
+                    <div class="floating-card floating-bottom">
+                        <i class="bi bi-trophy-fill"></i>
+                        Celebrate wins
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="features-section" id="features">
+    <div class="container">
+        <div class="section-heading text-center">
+            <span class="section-label">WHAT YOU CAN DO</span>
+            <h2>Everything you need to grow together.</h2>
+            <p>One place to discover people, share progress and build your campus network.</p>
+        </div>
+
+        <div class="row g-4 mt-3">
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon purple">
+                        <i class="bi bi-person-badge"></i>
+                    </div>
+                    <h4>Build your profile</h4>
+                    <p>Showcase your skills, interests, bio and achievements.</p>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon blue">
+                        <i class="bi bi-megaphone"></i>
+                    </div>
+                    <h4>Share updates</h4>
+                    <p>Post your ideas, activities and academic achievements.</p>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon orange">
+                        <i class="bi bi-search"></i>
+                    </div>
+                    <h4>Discover students</h4>
+                    <p>Find people based on their names and skills.</p>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon green">
+                        <i class="bi bi-person-plus"></i>
+                    </div>
+                    <h4>Make connections</h4>
+                    <p>Connect with fellow students and grow your network.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container text-center">
+        <h2>Ready to connect with your campus?</h2>
+        <p>Start building your student network today.</p>
+        <a href="/register" class="btn btn-light btn-lg rounded-pill px-4">
+            Create Your Account <i class="bi bi-arrow-right ms-2"></i>
+        </a>
+    </div>
+</section>
+
+{% endblock %}
