@@ -402,3 +402,88 @@ a {
         padding: 28px 22px;
     }
 }
+
+/* PROFILE PAGE */
+
+.profile-section {
+    background: #f8f8fc;
+    min-height: 75vh;
+    padding: 60px 0;
+}
+
+.profile-card {
+    background: white;
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 12px 35px rgba(35, 32, 80, 0.07);
+}
+
+.profile-cover {
+    height: 170px;
+    background: linear-gradient(120deg, #6558d3, #455fc4);
+}
+
+.profile-content {
+    padding: 0 35px 40px;
+}
+
+.profile-avatar {
+    width: 105px;
+    height: 105px;
+    border-radius: 50%;
+    background: #eeecff;
+    color: #6558d3;
+    border: 5px solid white;
+    margin-top: -52px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 3rem;
+}
+
+.profile-name {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-top: 15px;
+}
+
+.profile-headline {
+    color: #70748a;
+}
+
+.profile-detail h4 {
+    font-size: 1.1rem;
+    font-weight: 750;
+}
+
+.profile-detail p {
+    color: #70748a;
+    line-height: 1.8;
+}
+
+.skill-badge {
+    background: #eeecff;
+    color: #6558d3;
+    border-radius: 30px;
+    padding: 8px 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.profile-edit-card {
+    max-width: 550px;
+}
+
+@media (max-width: 576px) {
+    .profile-content {
+        padding: 0 20px 30px;
+    }
+
+    .profile-cover {
+        height: 120px;
+    }
+
+    .profile-name {
+        font-size: 1.6rem;
+    }
+}
