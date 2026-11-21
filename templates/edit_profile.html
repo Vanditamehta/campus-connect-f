@@ -10,54 +10,111 @@
     <div class="auth-card profile-edit-card">
 
         <div class="auth-heading">
+
             <div class="auth-icon">
                 <i class="bi bi-pencil-square"></i>
             </div>
 
             <h1>Edit Your Profile</h1>
+
             <p>Tell your campus community more about yourself.</p>
+
         </div>
 
-        <!-- Frontend preview only: backend integration comes later -->
-        <form onsubmit="return false;">
+        <form method="POST"
+              action="{{ url_for('profile.edit_profile') }}">
 
             <div class="mb-3">
-                <label class="form-label" for="name">Full Name</label>
-                <input class="form-control" id="name"
-                       name="name" value="Aarav Sharma">
+                <label class="form-label" for="name">
+                    Full Name
+                </label>
+
+                <input
+                    class="form-control"
+                    type="text"
+                    id="name"
+                    name="name"
+                    maxlength="100"
+                    required
+                    value="{{ profile.name if profile else user.name }}"
+                >
             </div>
 
             <div class="mb-3">
-                <label class="form-label" for="headline">Headline</label>
-                <input class="form-control" id="headline"
-                       name="headline"
-                       value="Computer Science Student">
+                <label class="form-label" for="headline">
+                    Headline
+                </label>
+
+                <input
+                    class="form-control"
+                    type="text"
+                    id="headline"
+                    name="headline"
+                    maxlength="150"
+                    value="{{ user.headline or '' }}"
+                >
             </div>
 
             <div class="mb-3">
-                <label class="form-label" for="skills">Skills</label>
-                <input class="form-control" id="skills"
-                       name="skills"
-                       value="Python, HTML, CSS, Flask">
+                <label class="form-label" for="specialization">
+                    Specialization
+                </label>
+
+                <input
+                    class="form-control"
+                    type="text"
+                    id="specialization"
+                    name="specialization"
+                    maxlength="150"
+                    value="{{ profile.specialization if profile else '' }}"
+                >
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="skills">
+                    Skills
+                </label>
+
+                <input
+                    class="form-control"
+                    type="text"
+                    id="skills"
+                    name="skills"
+                    required
+                    value="{{ profile.skills | join(', ') if profile else '' }}"
+                >
+
                 <small class="text-muted">
                     Separate skills with commas.
                 </small>
             </div>
 
             <div class="mb-4">
-                <label class="form-label" for="bio">About Me</label>
-                <textarea class="form-control" id="bio"
-                          name="bio" rows="4">Passionate computer science student interested in web development.</textarea>
+                <label class="form-label" for="bio">
+                    About Me
+                </label>
+
+                <textarea
+                    class="form-control"
+                    id="bio"
+                    name="bio"
+                    rows="4"
+                    maxlength="2000"
+                >{{ profile.bio if profile else '' }}</textarea>
             </div>
 
-            <button type="button" class="btn btn-primary w-100 py-2"
-                    onclick="alert('Profile editing will be enabled after backend integration.')">
+            <button type="submit"
+                    class="btn btn-primary w-100 py-2">
+
                 Save Changes
+
             </button>
 
-            <a href="profile.html"
+            <a href="{{ url_for('profile.profile_page') }}"
                class="btn btn-light w-100 mt-2">
+
                 Cancel
+
             </a>
 
         </form>

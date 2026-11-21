@@ -11,13 +11,30 @@ class User(db.Model):
     headline = db.Column(db.String(150), default="")
     password_hash = db.Column(db.String(256), nullable=True)
 
+    profile = db.relationship(
+        "Profile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan"
+    )
+
 
 class Profile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id"),
+        nullable=False,
+        unique=True
+    )
+
     name = db.Column(db.String(100), nullable=False)
     skills = db.Column(db.JSON, nullable=False)
     specialization = db.Column(db.String(150), default="")
     bio = db.Column(db.Text, default="")
+
+    user = db.relationship("User", back_populates="profile")
 
 
 class Post(db.Model):
@@ -44,4 +61,3 @@ class Post(db.Model):
     )
 
     author = db.relationship("User", backref="posts")
-

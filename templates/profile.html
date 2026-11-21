@@ -18,27 +18,42 @@
                 </div>
 
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+
                     <div>
-                        <h1 class="profile-name">Aarav Sharma</h1>
+                        <h1 class="profile-name">
+                            {{ profile.name }}
+                        </h1>
+
                         <p class="profile-headline">
-                            Computer Science Student | Web Developer
+                            {{ user.headline or "CampusConnect Member" }}
                         </p>
                     </div>
 
-                    <a href="edit_profile.html"
+                    <a href="{{ url_for('profile.edit_profile') }}"
                        class="btn btn-outline-primary rounded-pill px-4">
-                        <i class="bi bi-pencil"></i> Edit Profile
+
+                        <i class="bi bi-pencil"></i>
+                        Edit Profile
+
                     </a>
+
                 </div>
 
                 <hr>
 
                 <div class="profile-detail">
                     <h4>About Me</h4>
+
                     <p>
-                        Passionate computer science student interested in
-                        web development, problem solving and building
-                        projects that make a difference.
+                        {{ profile.bio or "No bio added yet." }}
+                    </p>
+                </div>
+
+                <div class="profile-detail mt-4">
+                    <h4>Specialization</h4>
+
+                    <p>
+                        {{ profile.specialization or "Not specified" }}
                     </p>
                 </div>
 
@@ -46,17 +61,19 @@
                     <h4>My Skills</h4>
 
                     <div class="d-flex flex-wrap gap-2">
-                        <span class="skill-badge">Python</span>
-                        <span class="skill-badge">HTML</span>
-                        <span class="skill-badge">CSS</span>
-                        <span class="skill-badge">JavaScript</span>
-                        <span class="skill-badge">Flask</span>
-                        <span class="skill-badge">UI/UX</span>
+
+                        {% for skill in profile.skills %}
+                            <span class="skill-badge">
+                                {{ skill }}
+                            </span>
+                        {% endfor %}
+
                     </div>
                 </div>
 
                 <div class="profile-detail mt-4">
                     <h4>CampusConnect Member</h4>
+
                     <p>Building connections and learning together.</p>
                 </div>
 
