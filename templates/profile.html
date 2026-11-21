@@ -1,0 +1,68 @@
+
+{% extends "base.html" %}
+
+{% block title %}Student Profile | CampusConnect{% endblock %}
+
+{% block content %}
+
+<section class="profile-section">
+    <div class="container">
+        <div class="profile-card">
+
+            <div class="profile-cover"></div>
+
+            <div class="profile-content">
+
+                <div class="profile-avatar">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <div>
+                        <h1 class="profile-name">Aarav Sharma</h1>
+                        <p class="profile-headline">
+                            Computer Science Student | Web Developer
+                        </p>
+                    </div>
+
+                    <a href="edit_profile.html"
+                       class="btn btn-outline-primary rounded-pill px-4">
+                        <i class="bi bi-pencil"></i> Edit Profile
+                    </a>
+                </div>
+
+                <hr>
+
+                <div class="profile-detail">
+                    <h4>About Me</h4>
+                    <p>
+                        Passionate computer science student interested in
+                        web development, problem solving and building
+                        projects that make a difference.
+                    </p>
+                </div>
+
+                <div class="profile-detail mt-4">
+                    <h4>My Skills</h4>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="skill-badge">Python</span>
+                        <span class="skill-badge">HTML</span>
+                        <span class="skill-badge">CSS</span>
+                        <span class="skill-badge">JavaScript</span>
+                        <span class="skill-badge">Flask</span>
+                        <span class="skill-badge">UI/UX</span>
+                    </div>
+                </div>
+
+                <div class="profile-detail mt-4">
+                    <h4>CampusConnect Member</h4>
+                    <p>Building connections and learning together.</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
