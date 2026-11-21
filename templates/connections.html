@@ -6,7 +6,6 @@
 {% block content %}
 <div class="container py-5">
 
-    <!-- Page Heading -->
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
         <div>
             <span class="section-label">YOUR COMMUNITY</span>
@@ -21,227 +20,291 @@
         </a>
     </div>
 
-    <!-- Connection Count -->
+    <!-- Connection Statistics -->
     <div class="row g-3 mb-4">
-        <div class="col-md-4">
+        <div class="col-md-6">
             <div class="profile-stat">
-                <h3>{{ following|length }}</h3>
-                <p>Connected Students</p>
+                <h3 id="followingCount">{{ following|length }}</h3>
+                <p>Following</p>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="profile-stat">
+                <h3 id="followersCount">{{ followers|length }}</h3>
+                <p>Followers</p>
             </div>
         </div>
     </div>
 
-    <!-- Search Connections -->
-    <div class="search-card mb-4">
+    <!-- Search -->
+    <div class="search-card mb-5">
         <label for="connectionSearch" class="form-label">
-            Find a connection
+            Search your connections
         </label>
+
         <input
             type="search"
             id="connectionSearch"
             class="form-control"
-            placeholder="Search connected students by name..."
+            placeholder="Search by student name..."
         >
     </div>
 
-    <!-- Connected Students -->
-    <h4 class="fw-bold mb-3">Students I Follow</h4>
+    <!-- Following Section -->
+    <section class="mb-5">
+        <span class="section-label">YOUR NETWORK</span>
+        <h2 class="fw-bold mt-1">Following</h2>
+        <p class="text-muted mb-3">Students you follow.</p>
 
-    <div class="row g-4" id="followingList">
+        <div class="row g-4" id="followingList">
 
-        {% for user in following %}
-        <div class="col-md-6 col-lg-4 connection-item"
-             data-name="{{ user.name|lower }}">
+            {% for student in following %}
+            <div class="col-md-6 col-lg-4 connection-item"
+                 data-name="{{ student.name|lower }}">
 
-            <div class="connection-card h-100">
+                <div class="connection-card h-100">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="connection-avatar">
+                            {{ student.name[:1]|upper }}
+                        </div>
 
-                <div class="d-flex align-items-center gap-3 mb-3">
-                    <div class="connection-avatar">
-                        {{ user.name[:1]|upper }}
+                        <div>
+                            <h5 class="mb-1">{{ student.name }}</h5>
+                            <p class="small mb-0">
+                                {{ student.headline or "CampusConnect Student" }}
+                            </p>
+                        </div>
                     </div>
 
-                    <div>
-                        <h5 class="mb-1">{{ user.name }}</h5>
-                        <p class="small mb-0">
-                            {{ user.headline or "Computer Science Student" }}
-                        </p>
-                    </div>
-                </div>
-
-                {% if user.profile and user.profile.bio %}
-                <p class="small">
-                    {{ user.profile.bio }}
-                </p>
-                {% endif %}
-
-                {% if user.profile and user.profile.skills %}
-                <div class="mb-3">
-
-                    {% if user.profile.skills is string %}
-                        <span class="skill-badge">
-                            {{ user.profile.skills }}
-                        </span>
-                    {% else %}
-                        {% for skill in user.profile.skills %}
-                        <span class="skill-badge">{{ skill }}</span>
-                        {% endfor %}
+                    {% if student.profile and student.profile.bio %}
+                    <p class="small">{{ student.profile.bio }}</p>
                     {% endif %}
 
-                </div>
-                {% endif %}
+                    <div class="mb-3">
+                        {% if student.profile and student.profile.skills %}
+                            {% if student.profile.skills is string %}
+                                <span class="skill-badge">
+                                    {{ student.profile.skills }}
+                                </span>
+                            {% else %}
+                                {% for skill in student.profile.skills %}
+                                    <span class="skill-badge">{{ skill }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted small">No skills added yet.</span>
+                        {% endif %}
+                    </div>
 
-                <form method="POST"
-                      action="{{ url_for('main.unfollow_user', user_id=user.id) }}">
-
-                    <button type="submit"
-                            class="btn btn-outline-primary w-100">
-                        <i class="bi bi-person-dash me-2"></i>Disconnect
+                    <button
+                        type="button"
+                        class="btn btn-outline-primary w-100 unfollow-btn"
+                        data-user-id="{{ student.id }}"
+                    >
+                        <i class="bi bi-person-dash me-2"></i>Unfollow
                     </button>
-
-                </form>
-
+                </div>
             </div>
+            {% endfor %}
+
         </div>
 
-        {% else %}
-        <div class="col-12">
-            <div class="empty-state mt-4">
-                <div class="empty-state-icon mb-3">
-                    <i class="bi bi-people"></i>
-                </div>
-
-                <h4>You haven't connected with anyone yet</h4>
-
-                <p>
-                    Discover students, explore shared interests
-                    and start building your campus community.
-                </p>
-
-                <a href="{{ url_for('main.people') }}"
-                   class="btn btn-primary">
-                    Find Students
-                </a>
+        <div id="followingEmpty"
+             class="empty-state mt-4 {% if following %}d-none{% endif %}">
+            <div class="empty-state-icon mb-3">
+                <i class="bi bi-people"></i>
             </div>
+            <h4>You're not following anyone yet</h4>
+            <p>Discover students and start building your campus network.</p>
+            <a href="{{ url_for('main.people') }}" class="btn btn-primary">
+                Find Students
+            </a>
         </div>
-        {% endfor %}
 
-    </div>
+        <p id="followingNoResults" class="text-muted mt-3 d-none">
+            No matching students found in Following.
+        </p>
+    </section>
 
-    <!-- My Followers -->
-    <h4 class="fw-bold mt-5 mb-3">My Followers</h4>
+    <!-- Followers Section -->
+    <section>
+        <span class="section-label">YOUR COMMUNITY</span>
+        <h2 class="fw-bold mt-1">Followers</h2>
+        <p class="text-muted mb-3">Students who follow you.</p>
 
-    <div class="row g-4" id="followersList">
+        <div class="row g-4" id="followersList">
 
-        {% for user in followers %}
-        <div class="col-md-6 col-lg-4 connection-item"
-             data-name="{{ user.name|lower }}">
+            {% for student in followers %}
+            <div class="col-md-6 col-lg-4 connection-item"
+                 data-name="{{ student.name|lower }}">
 
-            <div class="connection-card h-100">
+                <div class="connection-card h-100">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="connection-avatar">
+                            {{ student.name[:1]|upper }}
+                        </div>
 
-                <div class="d-flex align-items-center gap-3 mb-3">
-                    <div class="connection-avatar">
-                        {{ user.name[:1]|upper }}
+                        <div>
+                            <h5 class="mb-1">{{ student.name }}</h5>
+                            <p class="small mb-0">
+                                {{ student.headline or "CampusConnect Student" }}
+                            </p>
+                        </div>
                     </div>
 
-                    <div>
-                        <h5 class="mb-1">{{ user.name }}</h5>
-                        <p class="small mb-0">
-                            {{ user.headline or "Computer Science Student" }}
-                        </p>
-                    </div>
-                </div>
-
-                {% if user.profile and user.profile.bio %}
-                <p class="small">
-                    {{ user.profile.bio }}
-                </p>
-                {% endif %}
-
-                {% if user.profile and user.profile.skills %}
-                <div class="mb-3">
-
-                    {% if user.profile.skills is string %}
-                        <span class="skill-badge">
-                            {{ user.profile.skills }}
-                        </span>
-                    {% else %}
-                        {% for skill in user.profile.skills %}
-                        <span class="skill-badge">{{ skill }}</span>
-                        {% endfor %}
+                    {% if student.profile and student.profile.bio %}
+                    <p class="small">{{ student.profile.bio }}</p>
                     {% endif %}
 
+                    <div class="mb-3">
+                        {% if student.profile and student.profile.skills %}
+                            {% if student.profile.skills is string %}
+                                <span class="skill-badge">
+                                    {{ student.profile.skills }}
+                                </span>
+                            {% else %}
+                                {% for skill in student.profile.skills %}
+                                    <span class="skill-badge">{{ skill }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted small">No skills added yet.</span>
+                        {% endif %}
+                    </div>
+
+                    <p class="small text-muted mb-0">
+                        <i class="bi bi-person-check me-2"></i>Follows you
+                    </p>
                 </div>
-                {% endif %}
-
-                <p class="small text-muted mb-0">
-                    <i class="bi bi-person-check me-2"></i>Follows you
-                </p>
-
             </div>
+            {% endfor %}
+
         </div>
 
-        {% else %}
-        <div class="col-12">
-            <div class="empty-state mt-3">
-                <div class="empty-state-icon mb-3">
-                    <i class="bi bi-people"></i>
-                </div>
-
-                <h4>You don't have any followers yet</h4>
-
-                <p>
-                    Discover students and grow your campus community.
-                </p>
-
-                <a href="{{ url_for('main.people') }}"
-                   class="btn btn-primary">
-                    Find Students
-                </a>
+        <div id="followersEmpty"
+             class="empty-state mt-4 {% if followers %}d-none{% endif %}">
+            <div class="empty-state-icon mb-3">
+                <i class="bi bi-person-plus"></i>
             </div>
+            <h4>You don't have any followers yet</h4>
+            <p>As more students discover you, they will appear here.</p>
         </div>
-        {% endfor %}
 
-    </div>
+        <p id="followersNoResults" class="text-muted mt-3 d-none">
+            No matching students found in Followers.
+        </p>
+    </section>
 
-    <!-- No Search Results -->
-    <div id="noSearchResults" class="empty-state mt-4 d-none">
-        <h4>No matching students found</h4>
-        <p>Try searching with another name.</p>
-    </div>
+    <div id="connectionMessage" class="alert d-none mt-4" role="alert"></div>
 
 </div>
+{% endblock %}
 
-<!-- Connection Search Functionality -->
+{% block scripts %}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
     const searchInput = document.getElementById("connectionSearch");
-    const connectionCards = document.querySelectorAll(".connection-item");
-    const noResults = document.getElementById("noSearchResults");
+    const messageBox = document.getElementById("connectionMessage");
 
+    function showMessage(message, type) {
+        messageBox.textContent = message;
+        messageBox.className = "alert alert-" + type + " mt-4";
+
+        setTimeout(function () {
+            messageBox.classList.add("d-none");
+        }, 4000);
+    }
+
+    // Search both lists
     searchInput.addEventListener("input", function () {
+        const query = this.value.trim().toLowerCase();
 
-        const searchText = searchInput.value.trim().toLowerCase();
-        let visibleCount = 0;
+        ["following", "followers"].forEach(function (section) {
+            const list = document.getElementById(section + "List");
+            const cards = list.querySelectorAll(".connection-item");
+            const noResults = document.getElementById(section + "NoResults");
+            const emptyState = document.getElementById(section + "Empty");
 
-        connectionCards.forEach(function (card) {
+            let visibleCount = 0;
 
-            const studentName = card.dataset.name || "";
+            cards.forEach(function (card) {
+                const name = card.dataset.name || "";
+                const matches = name.includes(query);
 
-            if (studentName.includes(searchText)) {
-                card.classList.remove("d-none");
-                visibleCount++;
-            } else {
-                card.classList.add("d-none");
+                card.classList.toggle("d-none", !matches);
+
+                if (matches) {
+                    visibleCount++;
+                }
+            });
+
+            noResults.classList.toggle(
+                "d-none",
+                query.length === 0 || visibleCount > 0 || cards.length === 0
+            );
+
+            if (emptyState && cards.length > 0) {
+                emptyState.classList.add("d-none");
+            }
+        });
+    });
+
+    // Unfollow using the existing backend API
+    document.querySelectorAll(".unfollow-btn").forEach(function (button) {
+
+        button.addEventListener("click", async function () {
+
+            const userId = this.dataset.userId;
+            const card = this.closest(".connection-item");
+
+            if (!confirm("Are you sure you want to unfollow this student?")) {
+                return;
             }
 
+            this.disabled = true;
+
+            try {
+                const response = await fetch("/api/unfollow/" + userId, {
+                    method: "POST",
+                    headers: {
+                        "Accept": "application/json"
+                    },
+                    credentials: "same-origin"
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.error || "Could not unfollow this student."
+                    );
+                }
+
+                card.remove();
+
+                const remaining = document.querySelectorAll(
+                    "#followingList .connection-item"
+                ).length;
+
+                document.getElementById("followingCount").textContent = remaining;
+
+                if (remaining === 0) {
+                    document.getElementById("followingEmpty").classList.remove("d-none");
+                }
+
+                searchInput.dispatchEvent(new Event("input"));
+
+                showMessage("You have successfully unfollowed this student.", "success");
+
+            } catch (error) {
+                this.disabled = false;
+                showMessage(error.message, "danger");
+            }
         });
-
-        noResults.classList.toggle("d-none", visibleCount > 0);
-
     });
 
 });
 </script>
-
 {% endblock %}

@@ -1,0 +1,152 @@
+
+{% extends "base.html" %}
+
+{% block title %}Campus Feed | CampusConnect{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+    <!-- Page Heading -->
+    <div class="mb-4">
+        <span class="section-label">CAMPUS COMMUNITY</span>
+        <h1 class="fw-bold mt-2">Campus Feed</h1>
+        <p class="text-muted">
+            Share updates, celebrate achievements and stay connected.
+        </p>
+    </div>
+
+    <!-- Create Post -->
+    {% if session.get('user_id') %}
+    <div class="search-card p-4 mb-5">
+        <h4 class="fw-bold mb-3">Share something with your campus</h4>
+
+        <form method="POST" action="{{ url_for('posts.create_post') }}">
+
+            <div class="mb-3">
+                <label for="postKind" class="form-label">
+                    Post type
+                </label>
+
+                <select class="form-select" id="postKind" name="kind">
+                    <option value="status">Status Update</option>
+                    <option value="achievement">Achievement</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="postContent" class="form-label">
+                    What's on your mind?
+                </label>
+
+                <textarea
+                    class="form-control"
+                    id="postContent"
+                    name="content"
+                    rows="4"
+                    maxlength="2000"
+                    placeholder="Share your thoughts, progress or achievements..."
+                    required
+                ></textarea>
+
+                <div class="text-end small text-muted mt-1">
+                    Maximum 2000 characters
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary px-4">
+                <i class="bi bi-send me-2"></i>Publish Post
+            </button>
+
+        </form>
+    </div>
+    {% else %}
+    <div class="search-card p-4 mb-5 text-center">
+        <h4 class="fw-bold">Join the conversation</h4>
+        <p class="text-muted">
+            Log in to share updates and achievements with your campus.
+        </p>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+            Login to Post
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Feed Posts -->
+    <div class="mb-4">
+        <h3 class="fw-bold">Recent Updates</h3>
+        <p class="text-muted">Latest posts from the campus community.</p>
+    </div>
+
+    {% if posts %}
+
+        <div class="row g-4">
+
+            {% for post in posts %}
+            <div class="col-12">
+                <div class="connection-card p-4">
+
+                    <div class="d-flex align-items-center gap-3 mb-3">
+
+                        <div class="connection-avatar">
+                            {{ post.author.name[:1]|upper }}
+                        </div>
+
+                        <div>
+                            <h5 class="fw-bold mb-1">
+                                {{ post.author.name }}
+                            </h5>
+
+                            <p class="small text-muted mb-0">
+                                {{ post.author.headline or "CampusConnect Student" }}
+                            </p>
+                        </div>
+
+                        <div class="ms-auto">
+                            {% if post.kind == "achievement" %}
+                                <span class="skill-badge">
+                                    <i class="bi bi-trophy me-1"></i>Achievement
+                                </span>
+                            {% else %}
+                                <span class="skill-badge">
+                                    <i class="bi bi-chat-left-text me-1"></i>Status
+                                </span>
+                            {% endif %}
+                        </div>
+
+                    </div>
+
+                    <p class="mb-3 post-content">
+                        {{ post.content }}
+                    </p>
+
+                    <div class="border-top pt-3">
+                        <small class="text-muted">
+                            <i class="bi bi-clock me-1"></i>
+                            {{ post.created_at.strftime('%d %b %Y, %I:%M %p') }}
+                        </small>
+                    </div>
+
+                </div>
+            </div>
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="empty-state mt-4">
+            <div class="empty-state-icon mb-3">
+                <i class="bi bi-chat-square-text"></i>
+            </div>
+
+            <h4>No posts yet</h4>
+
+            <p>
+                Be the first to share something with your campus community.
+            </p>
+        </div>
+
+    {% endif %}
+
+</div>
+{% endblock %}
