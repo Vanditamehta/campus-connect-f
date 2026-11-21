@@ -25,12 +25,35 @@
                 </p>
 
                 <div class="d-flex flex-wrap gap-3 mt-4">
-                    <a href="/register" class="btn btn-primary btn-lg rounded-pill px-4">
-                        Get Started <i class="bi bi-arrow-right ms-2"></i>
-                    </a>
-                    <a href="/login" class="btn btn-outline-dark btn-lg rounded-pill px-4">
-                        Sign In
-                    </a>
+
+                    {% if session.get('user_id') %}
+
+                        <a href="{{ url_for('main.people') }}"
+                           class="btn btn-primary btn-lg rounded-pill px-4">
+                            Discover Students
+                            <i class="bi bi-arrow-right ms-2"></i>
+                        </a>
+
+                        <a href="{{ url_for('main.connections') }}"
+                           class="btn btn-outline-dark btn-lg rounded-pill px-4">
+                            My Connections
+                        </a>
+
+                    {% else %}
+
+                        <a href="{{ url_for('auth.register') }}"
+                           class="btn btn-primary btn-lg rounded-pill px-4">
+                            Get Started
+                            <i class="bi bi-arrow-right ms-2"></i>
+                        </a>
+
+                        <a href="{{ url_for('auth.login') }}"
+                           class="btn btn-outline-dark btn-lg rounded-pill px-4">
+                            Sign In
+                        </a>
+
+                    {% endif %}
+
                 </div>
 
                 <div class="hero-trust mt-4">
@@ -123,9 +146,24 @@
     <div class="container text-center">
         <h2>Ready to connect with your campus?</h2>
         <p>Start building your student network today.</p>
-        <a href="/register" class="btn btn-light btn-lg rounded-pill px-4">
-            Create Your Account <i class="bi bi-arrow-right ms-2"></i>
-        </a>
+
+        {% if session.get('user_id') %}
+
+            <a href="{{ url_for('main.people') }}"
+               class="btn btn-light btn-lg rounded-pill px-4">
+                Discover Students
+                <i class="bi bi-arrow-right ms-2"></i>
+            </a>
+
+        {% else %}
+
+            <a href="{{ url_for('auth.register') }}"
+               class="btn btn-light btn-lg rounded-pill px-4">
+                Create Your Account
+                <i class="bi bi-arrow-right ms-2"></i>
+            </a>
+
+        {% endif %}
     </div>
 </section>
 

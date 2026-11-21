@@ -5,6 +5,7 @@
 
 {% block content %}
 <div class="container py-5">
+
     <div class="text-center mb-5">
         <h1 class="fw-bold">Find Your Campus Community</h1>
         <p class="text-muted">
@@ -13,8 +14,9 @@
     </div>
 
     <div class="card search-card p-4 mb-4">
-        <form method="GET" action="#">
+        <form method="GET" action="{{ url_for('main.people') }}">
             <div class="row g-3">
+
                 <div class="col-md-7">
                     <label for="studentSearch" class="form-label">
                         Search by name
@@ -24,6 +26,7 @@
                         class="form-control"
                         id="studentSearch"
                         name="q"
+                        value="{{ search_query }}"
                         placeholder="Enter a student's name"
                     >
                 </div>
@@ -37,64 +40,89 @@
                         class="form-control"
                         id="skillSearch"
                         name="skill"
+                        value="{{ skill_query }}"
                         placeholder="e.g. Python, Web Development"
                     >
                 </div>
+
             </div>
 
-            <button type="button" class="btn btn-primary mt-3">
-                Search Students
-            </button>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">
+                    Search Students
+                </button>
+
+                <a href="{{ url_for('main.people') }}"
+                   class="btn btn-outline-secondary">
+                    Clear Filters
+                </a>
+            </div>
         </form>
     </div>
 
     <h4 class="fw-bold mb-3">Suggested Students</h4>
 
     <div class="row g-4">
-        <div class="col-md-6 col-lg-4">
-            <div class="card student-card h-100 p-3">
-                <h5 class="fw-bold">Aarav Sharma</h5>
-                <p class="text-muted">Computer Science Student</p>
-                <div class="mb-3">
-                    <span class="badge bg-light text-dark">Python</span>
-                    <span class="badge bg-light text-dark">Flask</span>
-                    <span class="badge bg-light text-dark">SQL</span>
-                </div>
-                <button type="button" class="btn btn-outline-primary w-100">
-                    Connect
-                </button>
-            </div>
-        </div>
 
+        {% for user in users %}
         <div class="col-md-6 col-lg-4">
             <div class="card student-card h-100 p-3">
-                <h5 class="fw-bold">Priya Verma</h5>
-                <p class="text-muted">UI/UX Designer</p>
-                <div class="mb-3">
-                    <span class="badge bg-light text-dark">Figma</span>
-                    <span class="badge bg-light text-dark">HTML</span>
-                    <span class="badge bg-light text-dark">CSS</span>
-                </div>
-                <button type="button" class="btn btn-outline-primary w-100">
-                    Connect
-                </button>
-            </div>
-        </div>
 
-        <div class="col-md-6 col-lg-4">
-            <div class="card student-card h-100 p-3">
-                <h5 class="fw-bold">Rohan Mehta</h5>
-                <p class="text-muted">Data Science Student</p>
+                <h5 class="fw-bold">{{ user.name }}</h5>
+
+                <p class="text-muted">
+                    {{ user.headline or "CampusConnect Student" }}
+                </p>
+
+                {% if user.profile and user.profile.specialization %}
+                    <p class="small">
+                        {{ user.profile.specialization }}
+                    </p>
+                {% endif %}
+
                 <div class="mb-3">
-                    <span class="badge bg-light text-dark">Python</span>
-                    <span class="badge bg-light text-dark">Machine Learning</span>
-                    <span class="badge bg-light text-dark">Pandas</span>
+                    {% if user.profile and user.profile.skills %}
+                        {% for skill in user.profile.skills %}
+                            <span class="badge bg-light text-dark">
+                                {{ skill }}
+                            </span>
+                        {% endfor %}
+                    {% else %}
+                        <span class="text-muted small">
+                            No skills added yet
+                        </span>
+                    {% endif %}
                 </div>
-                <button type="button" class="btn btn-outline-primary w-100">
-                    Connect
-                </button>
+
+                {% if user.id in followed_ids %}
+                    <form method="POST"
+                          action="{{ url_for('main.unfollow_user', user_id=user.id) }}">
+                        <button type="submit"
+                                class="btn btn-outline-primary w-100">
+                            Following · Unfollow
+                        </button>
+                    </form>
+                {% else %}
+                    <form method="POST"
+                          action="{{ url_for('main.follow_user', user_id=user.id) }}">
+                        <button type="submit"
+                                class="btn btn-outline-primary w-100">
+                            Connect
+                        </button>
+                    </form>
+                {% endif %}
+
             </div>
         </div>
+        {% else %}
+        <div class="col-12 text-center py-5">
+            <h5>No students found</h5>
+            <p class="text-muted">
+                Try changing your search or skill filter.
+            </p>
+        </div>
+        {% endfor %}
+
     </div>
 </div>
 {% endblock %}

@@ -16,7 +16,7 @@
             </p>
         </div>
 
-        <a href="#" class="btn btn-outline-primary">
+        <a href="{{ url_for('main.people') }}" class="btn btn-outline-primary">
             <i class="bi bi-people me-2"></i>Find Students
         </a>
     </div>
@@ -25,7 +25,7 @@
     <div class="row g-3 mb-4">
         <div class="col-md-4">
             <div class="profile-stat">
-                <h3>3</h3>
+                <h3>{{ following|length }}</h3>
                 <p>Connected Students</p>
             </div>
         </div>
@@ -45,118 +45,203 @@
     </div>
 
     <!-- Connected Students -->
-    <div class="row g-4">
+    <h4 class="fw-bold mb-3">Students I Follow</h4>
 
-        <!-- Student 1 -->
-        <div class="col-md-6 col-lg-4">
+    <div class="row g-4" id="followingList">
+
+        {% for user in following %}
+        <div class="col-md-6 col-lg-4 connection-item"
+             data-name="{{ user.name|lower }}">
+
             <div class="connection-card h-100">
+
                 <div class="d-flex align-items-center gap-3 mb-3">
-                    <div class="connection-avatar">AS</div>
+                    <div class="connection-avatar">
+                        {{ user.name[:1]|upper }}
+                    </div>
+
                     <div>
-                        <h5 class="mb-1">Aarav Sharma</h5>
-                        <p class="small mb-0">Computer Science Student</p>
+                        <h5 class="mb-1">{{ user.name }}</h5>
+                        <p class="small mb-0">
+                            {{ user.headline or "Computer Science Student" }}
+                        </p>
                     </div>
                 </div>
 
+                {% if user.profile and user.profile.bio %}
                 <p class="small">
-                    Interested in building web applications and exploring
-                    new technologies.
+                    {{ user.profile.bio }}
                 </p>
+                {% endif %}
 
+                {% if user.profile and user.profile.skills %}
                 <div class="mb-3">
-                    <span class="skill-badge">Python</span>
-                    <span class="skill-badge">Flask</span>
-                    <span class="skill-badge">SQL</span>
-                </div>
 
-                <button type="button"
-                        class="btn btn-outline-primary w-100"
-                        disabled>
-                    <i class="bi bi-person-dash me-2"></i>Disconnect
-                </button>
+                    {% if user.profile.skills is string %}
+                        <span class="skill-badge">
+                            {{ user.profile.skills }}
+                        </span>
+                    {% else %}
+                        {% for skill in user.profile.skills %}
+                        <span class="skill-badge">{{ skill }}</span>
+                        {% endfor %}
+                    {% endif %}
+
+                </div>
+                {% endif %}
+
+                <form method="POST"
+                      action="{{ url_for('main.unfollow_user', user_id=user.id) }}">
+
+                    <button type="submit"
+                            class="btn btn-outline-primary w-100">
+                        <i class="bi bi-person-dash me-2"></i>Disconnect
+                    </button>
+
+                </form>
+
             </div>
         </div>
 
-        <!-- Student 2 -->
-        <div class="col-md-6 col-lg-4">
-            <div class="connection-card h-100">
-                <div class="d-flex align-items-center gap-3 mb-3">
-                    <div class="connection-avatar">PV</div>
-                    <div>
-                        <h5 class="mb-1">Priya Verma</h5>
-                        <p class="small mb-0">UI/UX Designer</p>
-                    </div>
+        {% else %}
+        <div class="col-12">
+            <div class="empty-state mt-4">
+                <div class="empty-state-icon mb-3">
+                    <i class="bi bi-people"></i>
                 </div>
 
-                <p class="small">
-                    Passionate about creating beautiful and user-friendly
-                    digital experiences.
+                <h4>You haven't connected with anyone yet</h4>
+
+                <p>
+                    Discover students, explore shared interests
+                    and start building your campus community.
                 </p>
 
-                <div class="mb-3">
-                    <span class="skill-badge">Figma</span>
-                    <span class="skill-badge">HTML</span>
-                    <span class="skill-badge">CSS</span>
-                </div>
-
-                <button type="button"
-                        class="btn btn-outline-primary w-100"
-                        disabled>
-                    <i class="bi bi-person-dash me-2"></i>Disconnect
-                </button>
+                <a href="{{ url_for('main.people') }}"
+                   class="btn btn-primary">
+                    Find Students
+                </a>
             </div>
         </div>
-
-        <!-- Student 3 -->
-        <div class="col-md-6 col-lg-4">
-            <div class="connection-card h-100">
-                <div class="d-flex align-items-center gap-3 mb-3">
-                    <div class="connection-avatar">RM</div>
-                    <div>
-                        <h5 class="mb-1">Rohan Mehta</h5>
-                        <p class="small mb-0">Data Science Student</p>
-                    </div>
-                </div>
-
-                <p class="small">
-                    Exploring data science, machine learning and
-                    innovative technology solutions.
-                </p>
-
-                <div class="mb-3">
-                    <span class="skill-badge">Python</span>
-                    <span class="skill-badge">Pandas</span>
-                    <span class="skill-badge">ML</span>
-                </div>
-
-                <button type="button"
-                        class="btn btn-outline-primary w-100"
-                        disabled>
-                    <i class="bi bi-person-dash me-2"></i>Disconnect
-                </button>
-            </div>
-        </div>
+        {% endfor %}
 
     </div>
 
-    <!-- Empty State Design Reference
-         This is a visual reference for the future
-         when a user has no connections.
-         It is intentionally hidden for now. -->
+    <!-- My Followers -->
+    <h4 class="fw-bold mt-5 mb-3">My Followers</h4>
 
-    <div class="empty-state mt-4 d-none">
-        <div class="empty-state-icon mb-3">
-            <i class="bi bi-people"></i>
+    <div class="row g-4" id="followersList">
+
+        {% for user in followers %}
+        <div class="col-md-6 col-lg-4 connection-item"
+             data-name="{{ user.name|lower }}">
+
+            <div class="connection-card h-100">
+
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="connection-avatar">
+                        {{ user.name[:1]|upper }}
+                    </div>
+
+                    <div>
+                        <h5 class="mb-1">{{ user.name }}</h5>
+                        <p class="small mb-0">
+                            {{ user.headline or "Computer Science Student" }}
+                        </p>
+                    </div>
+                </div>
+
+                {% if user.profile and user.profile.bio %}
+                <p class="small">
+                    {{ user.profile.bio }}
+                </p>
+                {% endif %}
+
+                {% if user.profile and user.profile.skills %}
+                <div class="mb-3">
+
+                    {% if user.profile.skills is string %}
+                        <span class="skill-badge">
+                            {{ user.profile.skills }}
+                        </span>
+                    {% else %}
+                        {% for skill in user.profile.skills %}
+                        <span class="skill-badge">{{ skill }}</span>
+                        {% endfor %}
+                    {% endif %}
+
+                </div>
+                {% endif %}
+
+                <p class="small text-muted mb-0">
+                    <i class="bi bi-person-check me-2"></i>Follows you
+                </p>
+
+            </div>
         </div>
-        <h4>You haven't connected with anyone yet</h4>
-        <p>
-            Discover students, explore shared interests
-            and start building your campus community.
-        </p>
-        <a href="#" class="btn btn-primary">
-            Find Students
-        </a>
+
+        {% else %}
+        <div class="col-12">
+            <div class="empty-state mt-3">
+                <div class="empty-state-icon mb-3">
+                    <i class="bi bi-people"></i>
+                </div>
+
+                <h4>You don't have any followers yet</h4>
+
+                <p>
+                    Discover students and grow your campus community.
+                </p>
+
+                <a href="{{ url_for('main.people') }}"
+                   class="btn btn-primary">
+                    Find Students
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+
+    </div>
+
+    <!-- No Search Results -->
+    <div id="noSearchResults" class="empty-state mt-4 d-none">
+        <h4>No matching students found</h4>
+        <p>Try searching with another name.</p>
     </div>
 
 </div>
+
+<!-- Connection Search Functionality -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const searchInput = document.getElementById("connectionSearch");
+    const connectionCards = document.querySelectorAll(".connection-item");
+    const noResults = document.getElementById("noSearchResults");
+
+    searchInput.addEventListener("input", function () {
+
+        const searchText = searchInput.value.trim().toLowerCase();
+        let visibleCount = 0;
+
+        connectionCards.forEach(function (card) {
+
+            const studentName = card.dataset.name || "";
+
+            if (studentName.includes(searchText)) {
+                card.classList.remove("d-none");
+                visibleCount++;
+            } else {
+                card.classList.add("d-none");
+            }
+
+        });
+
+        noResults.classList.toggle("d-none", visibleCount > 0);
+
+    });
+
+});
+</script>
+
 {% endblock %}
