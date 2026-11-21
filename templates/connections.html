@@ -1,0 +1,162 @@
+
+{% extends "base.html" %}
+
+{% block title %}My Connections | CampusConnect{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+    <!-- Page Heading -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <span class="section-label">YOUR COMMUNITY</span>
+            <h1 class="fw-bold mt-2">My Connections</h1>
+            <p class="text-muted mb-0">
+                Stay connected with students who share your interests.
+            </p>
+        </div>
+
+        <a href="#" class="btn btn-outline-primary">
+            <i class="bi bi-people me-2"></i>Find Students
+        </a>
+    </div>
+
+    <!-- Connection Count -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="profile-stat">
+                <h3>3</h3>
+                <p>Connected Students</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Connections -->
+    <div class="search-card mb-4">
+        <label for="connectionSearch" class="form-label">
+            Find a connection
+        </label>
+        <input
+            type="search"
+            id="connectionSearch"
+            class="form-control"
+            placeholder="Search connected students by name..."
+        >
+    </div>
+
+    <!-- Connected Students -->
+    <div class="row g-4">
+
+        <!-- Student 1 -->
+        <div class="col-md-6 col-lg-4">
+            <div class="connection-card h-100">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="connection-avatar">AS</div>
+                    <div>
+                        <h5 class="mb-1">Aarav Sharma</h5>
+                        <p class="small mb-0">Computer Science Student</p>
+                    </div>
+                </div>
+
+                <p class="small">
+                    Interested in building web applications and exploring
+                    new technologies.
+                </p>
+
+                <div class="mb-3">
+                    <span class="skill-badge">Python</span>
+                    <span class="skill-badge">Flask</span>
+                    <span class="skill-badge">SQL</span>
+                </div>
+
+                <button type="button"
+                        class="btn btn-outline-primary w-100"
+                        disabled>
+                    <i class="bi bi-person-dash me-2"></i>Disconnect
+                </button>
+            </div>
+        </div>
+
+        <!-- Student 2 -->
+        <div class="col-md-6 col-lg-4">
+            <div class="connection-card h-100">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="connection-avatar">PV</div>
+                    <div>
+                        <h5 class="mb-1">Priya Verma</h5>
+                        <p class="small mb-0">UI/UX Designer</p>
+                    </div>
+                </div>
+
+                <p class="small">
+                    Passionate about creating beautiful and user-friendly
+                    digital experiences.
+                </p>
+
+                <div class="mb-3">
+                    <span class="skill-badge">Figma</span>
+                    <span class="skill-badge">HTML</span>
+                    <span class="skill-badge">CSS</span>
+                </div>
+
+                <button type="button"
+                        class="btn btn-outline-primary w-100"
+                        disabled>
+                    <i class="bi bi-person-dash me-2"></i>Disconnect
+                </button>
+            </div>
+        </div>
+
+        <!-- Student 3 -->
+        <div class="col-md-6 col-lg-4">
+            <div class="connection-card h-100">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="connection-avatar">RM</div>
+                    <div>
+                        <h5 class="mb-1">Rohan Mehta</h5>
+                        <p class="small mb-0">Data Science Student</p>
+                    </div>
+                </div>
+
+                <p class="small">
+                    Exploring data science, machine learning and
+                    innovative technology solutions.
+                </p>
+
+                <div class="mb-3">
+                    <span class="skill-badge">Python</span>
+                    <span class="skill-badge">Pandas</span>
+                    <span class="skill-badge">ML</span>
+                </div>
+
+                <button type="button"
+                        class="btn btn-outline-primary w-100"
+                        disabled>
+                    <i class="bi bi-person-dash me-2"></i>Disconnect
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Empty State Design Reference
+         This is a visual reference for the future
+         when a user has no connections.
+         It is intentionally hidden for now. -->
+
+    <div class="empty-state mt-4 d-none">
+        <div class="empty-state-icon mb-3">
+            <i class="bi bi-people"></i>
+        </div>
+        <h4>You haven't connected with anyone yet</h4>
+        <p>
+            Discover students, explore shared interests
+            and start building your campus community.
+        </p>
+        <a href="#" class="btn btn-primary">
+            Find Students
+        </a>
+    </div>
+
+</div>
+{% endblock %}
