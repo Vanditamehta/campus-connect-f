@@ -130,6 +130,15 @@
 
         {% for post in posts %}
 
+        {% set liked = false %}
+        {% if session.get('user_id') %}
+            {% for like in post.likes %}
+                {% if like.user_id == session.get('user_id') %}
+                    {% set liked = true %}
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+
         <div class="col-12 post-wrapper" id="post-{{ post.id }}">
 
             <div class="connection-card p-4">
@@ -194,7 +203,7 @@
                 </div>
 
 
-                <!-- EDIT FORM -->
+                <!-- EDIT POST FORM -->
                 {% if session.get('user_id') == post.user_id %}
 
                 <form
@@ -328,8 +337,177 @@
                 {% endif %}
 
 
+                <!-- LIKE AND COMMENT ACTIONS -->
+                <div class="border-top border-bottom py-3 my-3">
+
+                    <div class="d-flex flex-wrap align-items-center gap-3">
+
+                        {% if session.get('user_id') %}
+
+                        <button
+                            type="button"
+                            class="btn btn-sm like-button {% if liked %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                            data-like-url="/post/{{ post.id }}/like"
+                            data-unlike-url="/post/{{ post.id }}/unlike"
+                            data-liked="{{ 'true' if liked else 'false' }}"
+                        >
+                            <i class="bi bi-heart{% if liked %}-fill{% endif %} me-1"></i>
+                            <span class="like-button-text">
+                                {{ "Liked" if liked else "Like" }}
+                            </span>
+                        </button>
+
+                        {% else %}
+
+                        <a href="{{ url_for('auth.login') }}"
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-heart me-1"></i>Login to Like
+                        </a>
+
+                        {% endif %}
+
+                        <span class="small text-muted like-count">
+                            <strong>{{ post.likes|length }}</strong>
+                            {{ "like" if post.likes|length == 1 else "likes" }}
+                        </span>
+
+                        <span class="small text-muted">
+                            <i class="bi bi-chat-dots me-1"></i>
+                            <strong class="comment-count">{{ post.comments|length }}</strong>
+                            {{ "comment" if post.comments|length == 1 else "comments" }}
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- COMMENTS SECTION -->
+                <div class="comments-section">
+
+                    <h6 class="fw-bold mb-3">
+                        <i class="bi bi-chat-left-text me-1"></i>
+                        Comments
+                    </h6>
+
+                    <div class="comments-list">
+
+                        {% for comment in post.comments|sort(attribute='created_at') %}
+
+                        <div class="comment-item border rounded p-3 mb-2"
+                             id="comment-{{ comment.id }}">
+
+                            <div class="d-flex justify-content-between align-items-start">
+
+                                <div class="d-flex align-items-center gap-2">
+
+                                    <div class="connection-avatar"
+                                         style="width:35px;height:35px;font-size:14px;">
+                                        {{ comment.user.name[:1]|upper }}
+                                    </div>
+
+                                    <div>
+                                        <strong class="small">
+                                            {{ comment.user.name }}
+                                        </strong>
+
+                                        <div class="small text-muted">
+                                            {{ comment.created_at.strftime('%d %b %Y, %I:%M %p') }}
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                {% if session.get('user_id') == comment.user_id %}
+
+                                <div class="d-flex gap-2">
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline-primary edit-comment-btn"
+                                        data-edit-url="/comment/{{ comment.id }}/edit"
+                                        data-comment-id="{{ comment.id }}"
+                                        data-comment-content="{{ comment.content|e }}"
+                                    >
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline-danger delete-comment-btn"
+                                        data-delete-url="/comment/{{ comment.id }}/delete"
+                                    >
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+
+                                </div>
+
+                                {% endif %}
+
+                            </div>
+
+                            <p class="mb-0 mt-2 comment-content">
+                                {{ comment.content }}
+                            </p>
+
+                        </div>
+
+                        {% else %}
+
+                        <p class="small text-muted no-comments-message">
+                            No comments yet. Be the first to comment!
+                        </p>
+
+                        {% endfor %}
+
+                    </div>
+
+
+                    <!-- ADD COMMENT -->
+                    {% if session.get('user_id') %}
+
+                    <form
+                        class="add-comment-form mt-3"
+                        data-comment-url="/post/{{ post.id }}/comment"
+                    >
+
+                        <div class="input-group">
+
+                            <input
+                                type="text"
+                                class="form-control comment-input"
+                                placeholder="Write a comment..."
+                                maxlength="1000"
+                                required
+                            >
+
+                            <button type="submit"
+                                    class="btn btn-primary">
+                                <i class="bi bi-send me-1"></i>Comment
+                            </button>
+
+                        </div>
+
+                        <small class="text-muted">
+                            Maximum 1000 characters.
+                        </small>
+
+                    </form>
+
+                    {% else %}
+
+                    <p class="small text-muted mt-3">
+                        <a href="{{ url_for('auth.login') }}">Log in</a>
+                        to add a comment.
+                    </p>
+
+                    {% endif %}
+
+                </div>
+
+
                 <!-- POST DATE -->
-                <div class="border-top pt-3">
+                <div class="border-top pt-3 mt-3">
                     <small class="text-muted">
                         <i class="bi bi-clock me-1"></i>
                         {{ post.created_at.strftime('%d %b %Y, %I:%M %p') }}
@@ -372,6 +550,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const feedMessage = document.getElementById("feedMessage");
 
+
+    // DISPLAY MESSAGES
+
     function showMessage(message, type = "success") {
 
         feedMessage.textContent = message;
@@ -383,6 +564,8 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+
+    // IMAGE VALIDATION
 
     function validateSelectedImage(file) {
 
@@ -408,6 +591,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 
+    // UPDATE POST IMAGE
+
     function updatePostImage(card, filename) {
 
         const container = card.querySelector(".post-image-container");
@@ -426,6 +611,8 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+
+    // UPDATE EMPTY FEED
 
     function updateEmptyFeed() {
 
@@ -449,6 +636,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (createForm) {
 
         const imageInput = document.getElementById("postImage");
+
         const previewContainer =
             document.getElementById("createImagePreviewContainer");
 
@@ -473,6 +661,8 @@ document.addEventListener("DOMContentLoaded", function () {
             previewContainer.classList.remove("d-none");
         });
 
+
+        // REMOVE SELECTED IMAGE
 
         document.getElementById("removeCreateImage")
             .addEventListener("click", function () {
@@ -521,7 +711,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     throw new Error(result.error || "Could not publish post.");
                 }
 
-                showMessage("Post published successfully! Refreshing feed...", "success");
+                showMessage("Post published successfully!", "success");
 
                 window.location.reload();
 
@@ -537,7 +727,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 
-    // OPEN EDIT FORM
+    // OPEN EDIT POST FORM
 
     document.querySelectorAll(".edit-post-btn").forEach(button => {
 
@@ -556,7 +746,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 
-    // CANCEL EDIT
+    // CANCEL EDIT POST
 
     document.querySelectorAll(".cancel-edit").forEach(button => {
 
@@ -580,7 +770,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 
-    // EDIT IMAGE PREVIEW
+    // EDIT POST IMAGE PREVIEW
 
     document.querySelectorAll(".edit-post-form").forEach(form => {
 
@@ -634,8 +824,10 @@ document.addEventListener("DOMContentLoaded", function () {
             const removeImage =
                 this.querySelector(".remove-post-image").checked;
 
-            if (!content && !image &&
-                !card.querySelector(".post-image-container img").getAttribute("src")) {
+            const currentImage =
+                card.querySelector(".post-image").getAttribute("src");
+
+            if (!content && !image && (!currentImage || removeImage)) {
 
                 showMessage("A post must contain text or a photo.", "danger");
                 return;
@@ -741,6 +933,277 @@ document.addEventListener("DOMContentLoaded", function () {
                 showMessage("Post deleted successfully!", "success");
 
                 updateEmptyFeed();
+
+            } catch (error) {
+
+                showMessage(error.message, "danger");
+                this.disabled = false;
+
+            }
+
+        });
+
+    });
+
+
+    // LIKE AND UNLIKE POSTS
+
+    document.querySelectorAll(".like-button").forEach(button => {
+
+        button.addEventListener("click", async function () {
+
+            const isLiked = this.dataset.liked === "true";
+
+            const requestUrl = isLiked
+                ? this.dataset.unlikeUrl
+                : this.dataset.likeUrl;
+
+            this.disabled = true;
+
+            try {
+
+                const response = await fetch(requestUrl, {
+                    method: "POST"
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || "Could not update like.");
+                }
+
+                this.dataset.liked = result.liked ? "true" : "false";
+
+                this.classList.toggle("btn-primary", result.liked);
+                this.classList.toggle("btn-outline-primary", !result.liked);
+
+                const icon = this.querySelector("i");
+                const buttonText = this.querySelector(".like-button-text");
+
+                icon.className = result.liked
+                    ? "bi bi-heart-fill me-1"
+                    : "bi bi-heart me-1";
+
+                buttonText.textContent = result.liked ? "Liked" : "Like";
+
+                const card = this.closest(".connection-card");
+                const countElement = card.querySelector(".like-count");
+
+                countElement.innerHTML =
+                    "<strong>" + result.count + "</strong> " +
+                    (result.count === 1 ? "like" : "likes");
+
+            } catch (error) {
+
+                showMessage(error.message, "danger");
+
+            } finally {
+
+                this.disabled = false;
+
+            }
+
+        });
+
+    });
+
+
+    // ADD COMMENT
+
+    document.querySelectorAll(".add-comment-form").forEach(form => {
+
+        form.addEventListener("submit", async function (event) {
+
+            event.preventDefault();
+
+            const input = this.querySelector(".comment-input");
+            const content = input.value.trim();
+
+            if (!content) {
+                showMessage("Please write a comment first.", "danger");
+                return;
+            }
+
+            if (content.length > 1000) {
+                showMessage("Comment cannot exceed 1000 characters.", "danger");
+                return;
+            }
+
+            const submitButton = this.querySelector('button[type="submit"]');
+
+            submitButton.disabled = true;
+
+            try {
+
+                const response = await fetch(this.dataset.commentUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        content: content
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || "Could not add comment.");
+                }
+
+                showMessage("Comment added successfully!", "success");
+
+                window.location.reload();
+
+            } catch (error) {
+
+                showMessage(error.message, "danger");
+                submitButton.disabled = false;
+
+            }
+
+        });
+
+    });
+
+
+    // EDIT COMMENT
+
+    document.querySelectorAll(".edit-comment-btn").forEach(button => {
+
+        button.addEventListener("click", async function () {
+
+            const commentId = this.dataset.commentId;
+
+            const commentElement =
+                document.getElementById("comment-" + commentId);
+
+            const commentText =
+                commentElement.querySelector(".comment-content");
+
+            const newContent = window.prompt(
+                "Edit your comment:",
+                commentText.textContent.trim()
+            );
+
+            if (newContent === null) return;
+
+            const content = newContent.trim();
+
+            if (!content) {
+                showMessage("Comment cannot be empty.", "danger");
+                return;
+            }
+
+            if (content.length > 1000) {
+                showMessage("Comment cannot exceed 1000 characters.", "danger");
+                return;
+            }
+
+            this.disabled = true;
+
+            try {
+
+                const response = await fetch(this.dataset.editUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        content: content
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || "Could not edit comment.");
+                }
+
+                commentText.textContent = result.content || content;
+
+                showMessage("Comment updated successfully!", "success");
+
+            } catch (error) {
+
+                showMessage(error.message, "danger");
+
+            } finally {
+
+                this.disabled = false;
+
+            }
+
+        });
+
+    });
+
+
+    // DELETE COMMENT
+
+    document.querySelectorAll(".delete-comment-btn").forEach(button => {
+
+        button.addEventListener("click", async function () {
+
+            const confirmed = window.confirm(
+                "Are you sure you want to delete this comment?"
+            );
+
+            if (!confirmed) return;
+
+            const commentElement =
+                this.closest(".comment-item");
+
+            this.disabled = true;
+
+            try {
+
+                const response = await fetch(this.dataset.deleteUrl, {
+                    method: "POST"
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || "Could not delete comment.");
+                }
+
+                const card = this.closest(".connection-card");
+
+                commentElement.remove();
+
+                const countElement = card.querySelector(".comment-count");
+
+                const currentCount = parseInt(countElement.textContent, 10) || 0;
+                const newCount = Math.max(0, currentCount - 1);
+
+                countElement.textContent = newCount;
+
+                const commentLabel =
+                    countElement.parentElement;
+
+                commentLabel.innerHTML =
+                    '<i class="bi bi-chat-dots me-1"></i>' +
+                    '<strong class="comment-count">' + newCount + '</strong> ' +
+                    (newCount === 1 ? "comment" : "comments");
+
+                const commentsList = card.querySelector(".comments-list");
+
+                if (newCount === 0) {
+
+                    const emptyMessage = document.createElement("p");
+
+                    emptyMessage.className =
+                        "small text-muted no-comments-message";
+
+                    emptyMessage.textContent =
+                        "No comments yet. Be the first to comment!";
+
+                    commentsList.appendChild(emptyMessage);
+
+                }
+
+                showMessage("Comment deleted successfully!", "success");
 
             } catch (error) {
 
