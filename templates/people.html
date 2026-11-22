@@ -7,12 +7,14 @@
 <div class="container py-5">
 
     <div class="text-center mb-5">
-        <h1 class="fw-bold">Find Your Campus Community</h1>
+        <span class="section-label">CAMPUS COMMUNITY</span>
+        <h1 class="fw-bold mt-2">Find Your Campus Community</h1>
         <p class="text-muted">
             Discover students, explore skills and connect with your peers.
         </p>
     </div>
 
+    <!-- Search and Skill Filter -->
     <div class="card search-card p-4 mb-4">
         <form method="GET" action="{{ url_for('main.people') }}">
             <div class="row g-3">
@@ -22,7 +24,7 @@
                         Search by name
                     </label>
                     <input
-                        type="text"
+                        type="search"
                         class="form-control"
                         id="studentSearch"
                         name="q"
@@ -36,7 +38,7 @@
                         Filter by skill
                     </label>
                     <input
-                        type="text"
+                        type="search"
                         class="form-control"
                         id="skillSearch"
                         name="skill"
@@ -60,69 +62,225 @@
         </form>
     </div>
 
-    <h4 class="fw-bold mb-3">Suggested Students</h4>
+    <!-- Student Results -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold mb-0">Discover Students</h4>
+        <span class="text-muted small" id="studentCount">
+            {{ users|length }} students
+        </span>
+    </div>
 
-    <div class="row g-4">
+    <div class="row g-4" id="studentList">
 
-        {% for user in users %}
-        <div class="col-md-6 col-lg-4">
+        {% for student in users %}
+        <div class="col-md-6 col-lg-4 student-item"
+             data-name="{{ student.name|lower }}"
+             data-skills="{% if student.profile and student.profile.skills %}{% if student.profile.skills is string %}{{ student.profile.skills|lower }}{% else %}{{ student.profile.skills|join(', ')|lower }}{% endif %}{% endif %}">
+
             <div class="card student-card h-100 p-3">
 
-                <h5 class="fw-bold">{{ user.name }}</h5>
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="connection-avatar">
+                        {{ student.name[:1]|upper }}
+                    </div>
 
-                <p class="text-muted">
-                    {{ user.headline or "CampusConnect Student" }}
-                </p>
+                    <div>
+                        <h5 class="fw-bold mb-1">{{ student.name }}</h5>
+                        <p class="text-muted small mb-0">
+                            {{ student.headline or "CampusConnect Student" }}
+                        </p>
+                    </div>
+                </div>
 
-                {% if user.profile and user.profile.specialization %}
+                {% if student.profile and student.profile.specialization %}
                     <p class="small">
-                        {{ user.profile.specialization }}
+                        {{ student.profile.specialization }}
                     </p>
                 {% endif %}
 
                 <div class="mb-3">
-                    {% if user.profile and user.profile.skills %}
-                        {% for skill in user.profile.skills %}
-                            <span class="badge bg-light text-dark">
-                                {{ skill }}
+                    {% if student.profile and student.profile.skills %}
+                        {% if student.profile.skills is string %}
+                            <span class="skill-badge">
+                                {{ student.profile.skills }}
                             </span>
-                        {% endfor %}
+                        {% else %}
+                            {% for skill in student.profile.skills %}
+                                <span class="skill-badge">{{ skill }}</span>
+                            {% endfor %}
+                        {% endif %}
                     {% else %}
                         <span class="text-muted small">
-                            No skills added yet
+                            No skills added yet.
                         </span>
                     {% endif %}
                 </div>
 
-                {% if user.id in followed_ids %}
-                    <form method="POST"
-                          action="{{ url_for('main.unfollow_user', user_id=user.id) }}">
-                        <button type="submit"
-                                class="btn btn-outline-primary w-100">
-                            Following · Unfollow
-                        </button>
-                    </form>
+                {% if student.id in followed_ids %}
+                    <button
+                        type="button"
+                        class="btn btn-outline-primary w-100 follow-btn"
+                        data-user-id="{{ student.id }}"
+                        data-following="true">
+                        <i class="bi bi-person-check me-2"></i>
+                        Following
+                    </button>
                 {% else %}
-                    <form method="POST"
-                          action="{{ url_for('main.follow_user', user_id=user.id) }}">
-                        <button type="submit"
-                                class="btn btn-outline-primary w-100">
-                            Connect
-                        </button>
-                    </form>
+                    <button
+                        type="button"
+                        class="btn btn-primary w-100 follow-btn"
+                        data-user-id="{{ student.id }}"
+                        data-following="false">
+                        <i class="bi bi-person-plus me-2"></i>
+                        Connect
+                    </button>
                 {% endif %}
 
             </div>
         </div>
-        {% else %}
-        <div class="col-12 text-center py-5">
-            <h5>No students found</h5>
-            <p class="text-muted">
-                Try changing your search or skill filter.
-            </p>
-        </div>
         {% endfor %}
 
     </div>
+
+    <div id="noStudents"
+         class="empty-state mt-4 {% if users %}d-none{% endif %}">
+        <div class="empty-state-icon mb-3">
+            <i class="bi bi-people"></i>
+        </div>
+        <h4>No students found</h4>
+        <p>Try changing your search or skill filter.</p>
+    </div>
+
+    <p id="noSearchResults" class="text-muted text-center mt-4 d-none">
+        No students match your search.
+    </p>
+
+    <div id="peopleMessage"
+         class="alert d-none mt-4"
+         role="alert"></div>
+
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const nameSearch = document.getElementById("studentSearch");
+    const skillSearch = document.getElementById("skillSearch");
+    const studentCards = document.querySelectorAll(".student-item");
+    const studentCount = document.getElementById("studentCount");
+    const noSearchResults = document.getElementById("noSearchResults");
+    const messageBox = document.getElementById("peopleMessage");
+
+    // Live search within the results returned by the server
+    function filterStudents() {
+        const nameQuery = nameSearch.value.trim().toLowerCase();
+        const skillQuery = skillSearch.value.trim().toLowerCase();
+
+        let visibleCount = 0;
+
+        studentCards.forEach(function (card) {
+            const name = card.dataset.name || "";
+            const skills = card.dataset.skills || "";
+
+            const matches =
+                name.includes(nameQuery) &&
+                skills.includes(skillQuery);
+
+            card.classList.toggle("d-none", !matches);
+
+            if (matches) {
+                visibleCount++;
+            }
+        });
+
+        studentCount.textContent = visibleCount + " students";
+
+        noSearchResults.classList.toggle(
+            "d-none",
+            visibleCount > 0 || studentCards.length === 0
+        );
+    }
+
+    nameSearch.addEventListener("input", filterStudents);
+    skillSearch.addEventListener("input", filterStudents);
+
+    function showMessage(message, type) {
+        messageBox.textContent = message;
+        messageBox.className = "alert alert-" + type + " mt-4";
+
+        setTimeout(function () {
+            messageBox.classList.add("d-none");
+        }, 4000);
+    }
+
+    // Follow and unfollow through the existing backend API
+    document.querySelectorAll(".follow-btn").forEach(function (button) {
+
+        button.addEventListener("click", async function () {
+
+            const userId = this.dataset.userId;
+            const isFollowing = this.dataset.following === "true";
+
+            const endpoint = isFollowing
+                ? "/api/unfollow/" + userId
+                : "/api/follow/" + userId;
+
+            this.disabled = true;
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: "POST",
+                    headers: {
+                        "Accept": "application/json"
+                    },
+                    credentials: "same-origin"
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.error || "Unable to update connection."
+                    );
+                }
+
+                if (isFollowing) {
+                    this.dataset.following = "false";
+                    this.className = "btn btn-primary w-100 follow-btn";
+                    this.innerHTML =
+                        '<i class="bi bi-person-plus me-2"></i>Connect';
+
+                    showMessage(
+                        "You have unfollowed this student.",
+                        "success"
+                    );
+
+                } else {
+                    this.dataset.following = "true";
+                    this.className =
+                        "btn btn-outline-primary w-100 follow-btn";
+                    this.innerHTML =
+                        '<i class="bi bi-person-check me-2"></i>Following';
+
+                    showMessage(
+                        "You are now following this student.",
+                        "success"
+                    );
+                }
+
+            } catch (error) {
+                showMessage(error.message, "danger");
+
+            } finally {
+                this.disabled = false;
+            }
+
+        });
+
+    });
+
+});
+</script>
 {% endblock %}

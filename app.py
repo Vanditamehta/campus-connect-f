@@ -12,11 +12,15 @@ from routes.main import main_bp
 import models
 
 
-def create_app():
+def create_app(test_config=None):
     app = Flask(__name__)
 
-    # Load application configuration
+    # Load the normal application configuration
     app.config.from_object(Config)
+
+    # Apply optional overrides before initializing the database
+    if test_config:
+        app.config.update(test_config)
 
     # Initialize database
     db.init_app(app)
