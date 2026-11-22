@@ -48,6 +48,9 @@ class Post(db.Model):
 
     content = db.Column(db.String(2000), nullable=False)
 
+    # Optional photo attached to the post
+    image_filename = db.Column(db.String(255), nullable=True)
+
     kind = db.Column(
         db.String(20),
         nullable=False,
