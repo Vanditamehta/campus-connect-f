@@ -10,7 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from PIL import Image, UnidentifiedImageError
 
 from extensions import db
-from models import Post, User
+from models import Post, User, Like, Comment
 
 
 posts_bp = Blueprint("posts", __name__)
@@ -21,6 +21,10 @@ ALLOWED_IMAGE_FORMATS = {
     "WEBP": ".webp"
 }
 
+
+# --------------------------------------------------
+# IMAGE HELPER FUNCTIONS
+# --------------------------------------------------
 
 def validate_image(file):
     """Check that the uploaded file is a valid supported image."""
@@ -37,7 +41,6 @@ def validate_image(file):
             return None
 
         file.stream.seek(0)
-
         return ALLOWED_IMAGE_FORMATS[image_format]
 
     except (UnidentifiedImageError, OSError, ValueError):
@@ -56,7 +59,6 @@ def save_image(file):
     upload_folder = current_app.config["UPLOAD_FOLDER"]
 
     os.makedirs(upload_folder, exist_ok=True)
-
     file.save(os.path.join(upload_folder, filename))
 
     return filename
@@ -89,12 +91,26 @@ def get_uploaded_image():
     return request.files.get("image")
 
 
+# --------------------------------------------------
+# FEED
+# --------------------------------------------------
+
 @posts_bp.route("/feed", methods=["GET"])
 def feed():
     posts = Post.query.order_by(Post.created_at.desc()).all()
 
-    return render_template("feed.html", posts=posts)
+    current_user_id = session.get("user_id")
 
+    return render_template(
+        "feed.html",
+        posts=posts,
+        current_user_id=current_user_id
+    )
+
+
+# --------------------------------------------------
+# CREATE POST
+# --------------------------------------------------
 
 @posts_bp.route("/post", methods=["POST"])
 def create_post():
@@ -177,6 +193,10 @@ def create_post():
         "image_filename": post.image_filename
     }), 201
 
+
+# --------------------------------------------------
+# EDIT POST
+# --------------------------------------------------
 
 @posts_bp.route("/post/<int:post_id>/edit", methods=["POST"])
 def edit_post(post_id):
@@ -269,6 +289,10 @@ def edit_post(post_id):
     }), 200
 
 
+# --------------------------------------------------
+# DELETE POST
+# --------------------------------------------------
+
 @posts_bp.route("/post/<int:post_id>/delete", methods=["POST"])
 def delete_post(post_id):
     user_id = session.get("user_id")
@@ -289,6 +313,15 @@ def delete_post(post_id):
     filename = post.image_filename
 
     try:
+        # Delete associated likes and comments first.
+        Like.query.filter_by(post_id=post_id).delete(
+            synchronize_session=False
+        )
+
+        Comment.query.filter_by(post_id=post_id).delete(
+            synchronize_session=False
+        )
+
         db.session.delete(post)
         db.session.commit()
 
@@ -302,4 +335,269 @@ def delete_post(post_id):
     return jsonify({
         "message": "Post deleted successfully",
         "id": post_id
+    }), 200
+
+
+# --------------------------------------------------
+# LIKE POST
+# --------------------------------------------------
+
+@posts_bp.route("/post/<int:post_id>/like", methods=["POST"])
+def like_post(post_id):
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return jsonify({"error": "Please log in first"}), 401
+
+    user = db.session.get(User, user_id)
+
+    if user is None:
+        session.clear()
+        return jsonify({"error": "Please log in again"}), 401
+
+    post = db.session.get(Post, post_id)
+
+    if post is None:
+        return jsonify({"error": "Post not found"}), 404
+
+    existing_like = Like.query.filter_by(
+        user_id=user_id,
+        post_id=post_id
+    ).first()
+
+    if existing_like:
+        like_count = Like.query.filter_by(post_id=post_id).count()
+
+        return jsonify({
+            "message": "You have already liked this post",
+            "liked": True,
+            "like_count": like_count
+        }), 200
+
+    new_like = Like(
+        user_id=user_id,
+        post_id=post_id
+    )
+
+    try:
+        db.session.add(new_like)
+        db.session.commit()
+
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"error": "Could not like this post"}), 500
+
+    like_count = Like.query.filter_by(post_id=post_id).count()
+
+    return jsonify({
+        "message": "Post liked successfully",
+        "liked": True,
+        "like_count": like_count
+    }), 200
+
+
+# --------------------------------------------------
+# UNLIKE POST
+# --------------------------------------------------
+
+@posts_bp.route("/post/<int:post_id>/unlike", methods=["POST"])
+def unlike_post(post_id):
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return jsonify({"error": "Please log in first"}), 401
+
+    user = db.session.get(User, user_id)
+
+    if user is None:
+        session.clear()
+        return jsonify({"error": "Please log in again"}), 401
+
+    post = db.session.get(Post, post_id)
+
+    if post is None:
+        return jsonify({"error": "Post not found"}), 404
+
+    existing_like = Like.query.filter_by(
+        user_id=user_id,
+        post_id=post_id
+    ).first()
+
+    if existing_like is None:
+        like_count = Like.query.filter_by(post_id=post_id).count()
+
+        return jsonify({
+            "message": "You have not liked this post",
+            "liked": False,
+            "like_count": like_count
+        }), 200
+
+    try:
+        db.session.delete(existing_like)
+        db.session.commit()
+
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"error": "Could not unlike this post"}), 500
+
+    like_count = Like.query.filter_by(post_id=post_id).count()
+
+    return jsonify({
+        "message": "Post unliked successfully",
+        "liked": False,
+        "like_count": like_count
+    }), 200
+
+
+# --------------------------------------------------
+# ADD COMMENT
+# --------------------------------------------------
+
+@posts_bp.route("/post/<int:post_id>/comment", methods=["POST"])
+def add_comment(post_id):
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return jsonify({"error": "Please log in to comment"}), 401
+
+    user = db.session.get(User, user_id)
+
+    if user is None:
+        session.clear()
+        return jsonify({"error": "Please log in again"}), 401
+
+    post = db.session.get(Post, post_id)
+
+    if post is None:
+        return jsonify({"error": "Post not found"}), 404
+
+    data = request.get_json(silent=True) or request.form
+    content = data.get("content", "")
+
+    if not isinstance(content, str):
+        return jsonify({"error": "Invalid comment"}), 400
+
+    content = content.strip()
+
+    if not content:
+        return jsonify({"error": "Comment cannot be empty"}), 400
+
+    if len(content) > 1000:
+        return jsonify({
+            "error": "Comment cannot exceed 1000 characters"
+        }), 400
+
+    comment = Comment(
+        user_id=user_id,
+        post_id=post_id,
+        content=content
+    )
+
+    try:
+        db.session.add(comment)
+        db.session.commit()
+
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"error": "Could not add comment"}), 500
+
+    return jsonify({
+        "message": "Comment added successfully",
+        "comment": {
+            "id": comment.id,
+            "post_id": comment.post_id,
+            "user_id": comment.user_id,
+            "author": user.name,
+            "content": comment.content,
+            "created_at": comment.created_at.isoformat()
+        }
+    }), 201
+
+
+# --------------------------------------------------
+# EDIT COMMENT
+# --------------------------------------------------
+
+@posts_bp.route("/comment/<int:comment_id>/edit", methods=["POST"])
+def edit_comment(comment_id):
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return jsonify({"error": "Please log in first"}), 401
+
+    comment = db.session.get(Comment, comment_id)
+
+    if comment is None:
+        return jsonify({"error": "Comment not found"}), 404
+
+    if comment.user_id != user_id:
+        return jsonify({
+            "error": "You cannot edit another user's comment"
+        }), 403
+
+    data = request.get_json(silent=True) or request.form
+    content = data.get("content", "")
+
+    if not isinstance(content, str):
+        return jsonify({"error": "Invalid comment"}), 400
+
+    content = content.strip()
+
+    if not content:
+        return jsonify({"error": "Comment cannot be empty"}), 400
+
+    if len(content) > 1000:
+        return jsonify({
+            "error": "Comment cannot exceed 1000 characters"
+        }), 400
+
+    comment.content = content
+
+    try:
+        db.session.commit()
+
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"error": "Could not update comment"}), 500
+
+    return jsonify({
+        "message": "Comment updated successfully",
+        "id": comment.id,
+        "content": comment.content,
+        "updated_at": comment.updated_at.isoformat()
+    }), 200
+
+
+# --------------------------------------------------
+# DELETE COMMENT
+# --------------------------------------------------
+
+@posts_bp.route("/comment/<int:comment_id>/delete", methods=["POST"])
+def delete_comment(comment_id):
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return jsonify({"error": "Please log in first"}), 401
+
+    comment = db.session.get(Comment, comment_id)
+
+    if comment is None:
+        return jsonify({"error": "Comment not found"}), 404
+
+    if comment.user_id != user_id:
+        return jsonify({
+            "error": "You cannot delete another user's comment"
+        }), 403
+
+    try:
+        db.session.delete(comment)
+        db.session.commit()
+
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"error": "Could not delete comment"}), 500
+
+    return jsonify({
+        "message": "Comment deleted successfully",
+        "id": comment_id
     }), 200
