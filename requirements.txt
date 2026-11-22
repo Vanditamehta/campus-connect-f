@@ -14,3 +14,5 @@ SQLAlchemy==2.1.9
 typing_extensions==4.16.0
 Werkzeug==3.1.9
 pillow==13.0.0
+gunicorn==27.0.1
+Flask-Migrate==4.1.0

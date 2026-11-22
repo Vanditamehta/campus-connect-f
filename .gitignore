@@ -221,3 +221,11 @@ __marimo__/
 
 # Local application database
 campusconnect.db
+
+# All local SQLite databases and backups
+*.db
+*.db-journal
+
+# User-uploaded photos
+static/uploads/*
+!static/uploads/.gitkeep

@@ -1,7 +1,7 @@
 
 from flask import Flask, render_template
 from config import Config
-from extensions import db
+from extensions import db, migrate
 
 from routes.auth import auth_bp
 from routes.profile import profile_bp
@@ -15,15 +15,16 @@ import models
 def create_app(test_config=None):
     app = Flask(__name__)
 
-    # Load the normal application configuration
+    # Load application configuration
     app.config.from_object(Config)
 
-    # Apply optional overrides before initializing the database
+    # Apply optional test configuration
     if test_config:
         app.config.update(test_config)
 
-    # Initialize database
+    # Initialize database and migrations
     db.init_app(app)
+    migrate.init_app(app, db)
 
     # Register application routes
     app.register_blueprint(auth_bp)
@@ -37,9 +38,10 @@ def create_app(test_config=None):
     def home():
         return render_template("index.html")
 
-    # Create database tables if they do not exist
-    with app.app_context():
-        db.create_all()
+    # Create database tables automatically only when enabled
+    if app.config.get("AUTO_CREATE_DB", True):
+        with app.app_context():
+            db.create_all()
 
     return app
 
@@ -48,4 +50,4 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=app.config.get("DEBUG", False))
