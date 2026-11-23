@@ -130,11 +130,12 @@
 
         {% for post in posts %}
 
-        {% set liked = false %}
+        {% set liked_state = namespace(value=false) %}
         {% if session.get('user_id') %}
+
             {% for like in post.likes %}
                 {% if like.user_id == session.get('user_id') %}
-                    {% set liked = true %}
+                    {% set liked_state.value = true %}
                 {% endif %}
             {% endfor %}
         {% endif %}
@@ -346,14 +347,14 @@
 
                         <button
                             type="button"
-                            class="btn btn-sm like-button {% if liked %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                            class="btn btn-sm like-button {% if liked_state.value %}btn-primary{% else %}btn-outline-primary{% endif %}"
                             data-like-url="/post/{{ post.id }}/like"
                             data-unlike-url="/post/{{ post.id }}/unlike"
-                            data-liked="{{ 'true' if liked else 'false' }}"
+                            data-liked="{{ 'true' if liked_state.value else 'false' }}"
                         >
-                            <i class="bi bi-heart{% if liked %}-fill{% endif %} me-1"></i>
+                            <i class="bi bi-heart{% if liked_state.value %}-fill{% endif %} me-1"></i>
                             <span class="like-button-text">
-                                {{ "Liked" if liked else "Like" }}
+                                {{ "Liked" if liked_state.value else "Like" }}
                             </span>
                         </button>
 
@@ -990,8 +991,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 const countElement = card.querySelector(".like-count");
 
                 countElement.innerHTML =
-                    "<strong>" + result.count + "</strong> " +
-                    (result.count === 1 ? "like" : "likes");
+                    "<strong>" + result.like_count + "</strong> " +
+                    (result.like_count === 1 ? "like" : "likes");
 
             } catch (error) {
 
