@@ -21,10 +21,72 @@
 
         </div>
 
-        <form method="POST"
-              action="{{ url_for('profile.edit_profile') }}">
+        <form
+            method="POST"
+            action="{{ url_for('profile.edit_profile') }}"
+            enctype="multipart/form-data"
+        >
 
+            <!-- Profile Picture Upload -->
+            <div class="profile-upload-section mb-4 text-center">
+
+                <div class="profile-upload-preview mb-3">
+
+                    {% if profile and profile.profile_image_filename %}
+
+                        <img
+                            id="profileImagePreview"
+                            src="{{ url_for('static', filename='uploads/' ~ profile.profile_image_filename) }}"
+                            alt="Your profile picture"
+                        >
+
+                    {% else %}
+
+                        <div id="profileImagePlaceholder">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+
+                        <img
+                            id="profileImagePreview"
+                            src=""
+                            alt="Profile picture preview"
+                            class="d-none"
+                        >
+
+                    {% endif %}
+
+                </div>
+
+                <label
+                    for="profile_image"
+                    class="btn btn-outline-primary"
+                >
+                    <i class="bi bi-camera me-2"></i>
+                    Choose Profile Picture
+                </label>
+
+                <input
+                    type="file"
+                    id="profile_image"
+                    name="profile_image"
+                    class="d-none"
+                    accept="image/jpeg,image/png,image/webp"
+                >
+
+                <p class="text-muted small mt-2 mb-0">
+                    JPG, PNG or WEBP · Maximum request size 5 MB
+                </p>
+
+                <p
+                    id="profileImageFileName"
+                    class="small mt-2 mb-0"
+                ></p>
+
+            </div>
+
+            <!-- Full Name -->
             <div class="mb-3">
+
                 <label class="form-label" for="name">
                     Full Name
                 </label>
@@ -38,9 +100,12 @@
                     required
                     value="{{ profile.name if profile else user.name }}"
                 >
+
             </div>
 
+            <!-- Headline -->
             <div class="mb-3">
+
                 <label class="form-label" for="headline">
                     Headline
                 </label>
@@ -53,9 +118,12 @@
                     maxlength="150"
                     value="{{ user.headline or '' }}"
                 >
+
             </div>
 
+            <!-- Specialization -->
             <div class="mb-3">
+
                 <label class="form-label" for="specialization">
                     Specialization
                 </label>
@@ -68,9 +136,12 @@
                     maxlength="150"
                     value="{{ profile.specialization if profile else '' }}"
                 >
+
             </div>
 
+            <!-- Skills -->
             <div class="mb-3">
+
                 <label class="form-label" for="skills">
                     Skills
                 </label>
@@ -87,9 +158,12 @@
                 <small class="text-muted">
                     Separate skills with commas.
                 </small>
+
             </div>
 
+            <!-- About Me -->
             <div class="mb-4">
+
                 <label class="form-label" for="bio">
                     About Me
                 </label>
@@ -101,25 +175,84 @@
                     rows="4"
                     maxlength="2000"
                 >{{ profile.bio if profile else '' }}</textarea>
+
             </div>
 
-            <button type="submit"
-                    class="btn btn-primary w-100 py-2">
-
+            <!-- Save -->
+            <button
+                type="submit"
+                class="btn btn-primary w-100 py-2"
+            >
+                <i class="bi bi-check-circle me-2"></i>
                 Save Changes
-
             </button>
 
-            <a href="{{ url_for('profile.profile_page') }}"
-               class="btn btn-light w-100 mt-2">
-
+            <!-- Cancel -->
+            <a
+                href="{{ url_for('profile.profile_page') }}"
+                class="btn btn-light w-100 mt-2"
+            >
                 Cancel
-
             </a>
 
         </form>
 
     </div>
+
 </section>
 
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const imageInput = document.getElementById("profile_image");
+    const imagePreview = document.getElementById("profileImagePreview");
+    const placeholder = document.getElementById("profileImagePlaceholder");
+    const fileName = document.getElementById("profileImageFileName");
+
+    if (!imageInput) return;
+
+    imageInput.addEventListener("change", function () {
+
+        const file = this.files[0];
+
+        if (!file) return;
+
+        const allowedTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
+            alert("Please choose a JPG, PNG or WEBP image.");
+            this.value = "";
+            fileName.textContent = "";
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert("The selected image must be smaller than 5 MB.");
+            this.value = "";
+            fileName.textContent = "";
+            return;
+        }
+
+        const imageURL = URL.createObjectURL(file);
+
+        imagePreview.src = imageURL;
+        imagePreview.classList.remove("d-none");
+
+        if (placeholder) {
+            placeholder.classList.add("d-none");
+        }
+
+        fileName.textContent = file.name;
+    });
+
+});
+</script>
 {% endblock %}

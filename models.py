@@ -34,6 +34,12 @@ class Profile(db.Model):
     specialization = db.Column(db.String(150), default="")
     bio = db.Column(db.Text, default="")
 
+    # Optional profile picture filename
+    profile_image_filename = db.Column(
+        db.String(255),
+        nullable=True
+    )
+
     user = db.relationship("User", back_populates="profile")
 
 

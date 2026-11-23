@@ -10,7 +10,7 @@ from flask import (
 )
 
 from extensions import db
-from models import User, Connection
+from models import User, Profile, Connection
 
 
 main_bp = Blueprint("main", __name__)
@@ -28,6 +28,34 @@ def get_logged_in_user():
         session.clear()
 
     return user
+
+
+# View another student's public profile
+@main_bp.route("/people/profile/<int:user_id>", methods=["GET"])
+def public_profile(user_id):
+
+    student = db.session.get(User, user_id)
+
+    if student is None:
+        flash("Student not found.", "danger")
+        return redirect(url_for("main.people"))
+
+    student_profile = Profile.query.filter_by(
+        user_id=student.id
+    ).first()
+
+    if student_profile is None:
+        flash("This student has not created a profile yet.", "info")
+        return redirect(url_for("main.people"))
+
+    is_owner = session.get("user_id") == student.id
+
+    return render_template(
+        "profile.html",
+        profile=student_profile,
+        user=student,
+        is_owner=is_owner
+    )
 
 
 # Discover and search students

@@ -1,4 +1,9 @@
 
+import os
+import uuid
+
+from PIL import Image, UnidentifiedImageError
+
 from flask import (
     Blueprint,
     request,
@@ -7,7 +12,8 @@ from flask import (
     redirect,
     url_for,
     session,
-    flash
+    flash,
+    current_app
 )
 
 from sqlalchemy.exc import SQLAlchemyError
@@ -18,8 +24,17 @@ from models import Profile, User
 
 profile_bp = Blueprint("profile", __name__)
 
+ALLOWED_IMAGE_FORMATS = {
+    "JPEG": ".jpg",
+    "PNG": ".png",
+    "WEBP": ".webp"
+}
 
-# Get the currently logged-in user
+
+# =====================================================
+# AUTHENTICATION
+# =====================================================
+
 def get_logged_in_user():
     user_id = session.get("user_id")
 
@@ -34,11 +49,88 @@ def get_logged_in_user():
     return user
 
 
-# Validate profile information
+# =====================================================
+# PROFILE IMAGE HELPERS
+# =====================================================
+
+def save_profile_image(image_file):
+    """
+    Validate and save a profile image.
+    Returns the generated filename, or None if no image was uploaded.
+    """
+
+    if image_file is None or not image_file.filename:
+        return None
+
+    try:
+        image_file.stream.seek(0)
+
+        with Image.open(image_file.stream) as image:
+            image_format = image.format
+
+            if image_format not in ALLOWED_IMAGE_FORMATS:
+                raise ValueError(
+                    "Only JPEG, PNG and WEBP images are allowed."
+                )
+
+            image.verify()
+
+        image_file.stream.seek(0)
+
+        extension = ALLOWED_IMAGE_FORMATS[image_format]
+        filename = f"{uuid.uuid4().hex}{extension}"
+
+        upload_folder = current_app.config["UPLOAD_FOLDER"]
+        os.makedirs(upload_folder, exist_ok=True)
+
+        image_path = os.path.join(upload_folder, filename)
+        image_file.save(image_path)
+
+        return filename
+
+    except ValueError:
+        raise
+
+    except (
+        UnidentifiedImageError,
+        OSError,
+        Image.DecompressionBombError
+    ):
+        raise ValueError(
+            "The uploaded file is not a valid image."
+        )
+
+
+def remove_profile_image(filename):
+    """
+    Safely remove an old profile image from the upload folder.
+    """
+
+    if not filename:
+        return
+
+    safe_filename = os.path.basename(filename)
+
+    upload_folder = current_app.config["UPLOAD_FOLDER"]
+    image_path = os.path.join(upload_folder, safe_filename)
+
+    try:
+        if os.path.isfile(image_path):
+            os.remove(image_path)
+
+    except OSError:
+        current_app.logger.warning(
+            "Could not remove old profile image: %s",
+            safe_filename
+        )
+
+
+# =====================================================
+# PROFILE VALIDATION
+# =====================================================
+
 def validate_profile_data(data, user, profile=None):
 
-    # Name is mandatory when creating a profile.
-    # During an update, existing values can be retained.
     name = data.get(
         "name",
         profile.name if profile else ""
@@ -143,8 +235,16 @@ def validate_profile_data(data, user, profile=None):
     }, None
 
 
-# Create or update profile information
-def save_profile_data(user, profile, validated_data):
+# =====================================================
+# SAVE PROFILE INFORMATION
+# =====================================================
+
+def save_profile_data(
+    user,
+    profile,
+    validated_data,
+    profile_image_filename=None
+):
 
     if profile is None:
         profile = Profile(user_id=user.id)
@@ -153,6 +253,10 @@ def save_profile_data(user, profile, validated_data):
     profile.skills = validated_data["skills"]
     profile.specialization = validated_data["specialization"]
     profile.bio = validated_data["bio"]
+
+    # Change the picture only when a new one was uploaded
+    if profile_image_filename:
+        profile.profile_image_filename = profile_image_filename
 
     # Update the user's account information
     user.name = validated_data["name"]
@@ -164,8 +268,19 @@ def save_profile_data(user, profile, validated_data):
     return profile
 
 
-# Format profile data for JSON responses
+# =====================================================
+# PROFILE JSON RESPONSE
+# =====================================================
+
 def profile_response(profile):
+
+    image_url = None
+
+    if profile.profile_image_filename:
+        image_url = url_for(
+            "static",
+            filename=f"uploads/{profile.profile_image_filename}"
+        )
 
     return {
         "id": profile.id,
@@ -174,11 +289,15 @@ def profile_response(profile):
         "headline": profile.user.headline or "",
         "skills": profile.skills,
         "specialization": profile.specialization,
-        "bio": profile.bio
+        "bio": profile.bio,
+        "profile_image_url": image_url
     }
 
 
-# View or create the logged-in user's profile
+# =====================================================
+# CREATE OR VIEW OWN PROFILE
+# =====================================================
+
 @profile_bp.route("/profile", methods=["GET", "POST"])
 def profile_page():
 
@@ -211,17 +330,19 @@ def profile_page():
             user=user
         )
 
-    # Create profile
+    # Receive profile information
     data = request.get_json(silent=True)
 
     if data is None:
         data = request.form
 
     if not hasattr(data, "get"):
-        return jsonify({"error": "Invalid profile data."}), 400
+        return jsonify({
+            "error": "Invalid profile data."
+        }), 400
 
-    # Require name and skills during creation
     if not data.get("name") or not data.get("skills"):
+
         if request.is_json:
             return jsonify({
                 "error": "Name and skills are required."
@@ -254,15 +375,37 @@ def profile_page():
         flash(error, "danger")
         return redirect(url_for("profile.edit_profile"))
 
+    uploaded_filename = None
+
     try:
+        if not request.is_json:
+            uploaded_filename = save_profile_image(
+                request.files.get("profile_image")
+            )
+
         profile = save_profile_data(
             user,
             None,
-            validated_data
+            validated_data,
+            uploaded_filename
         )
+
+    except ValueError as error:
+
+        if uploaded_filename:
+            remove_profile_image(uploaded_filename)
+
+        if request.is_json:
+            return jsonify({"error": str(error)}), 400
+
+        flash(str(error), "danger")
+        return redirect(url_for("profile.edit_profile"))
 
     except SQLAlchemyError:
         db.session.rollback()
+
+        if uploaded_filename:
+            remove_profile_image(uploaded_filename)
 
         if request.is_json:
             return jsonify({
@@ -279,7 +422,10 @@ def profile_page():
     return redirect(url_for("profile.profile_page"))
 
 
-# Open and save the edit profile form
+# =====================================================
+# EDIT PROFILE
+# =====================================================
+
 @profile_bp.route("/profile/edit", methods=["GET", "POST"])
 def edit_profile():
 
@@ -315,7 +461,9 @@ def edit_profile():
         data = request.form
 
     if not hasattr(data, "get"):
-        return jsonify({"error": "Invalid profile data."}), 400
+        return jsonify({
+            "error": "Invalid profile data."
+        }), 400
 
     validated_data, error = validate_profile_data(
         data,
@@ -331,15 +479,42 @@ def edit_profile():
         flash(error, "danger")
         return redirect(url_for("profile.edit_profile"))
 
+    old_image_filename = (
+        profile.profile_image_filename
+        if profile else None
+    )
+
+    uploaded_filename = None
+
     try:
+        if not request.is_json:
+            uploaded_filename = save_profile_image(
+                request.files.get("profile_image")
+            )
+
         profile = save_profile_data(
             user,
             profile,
-            validated_data
+            validated_data,
+            uploaded_filename
         )
+
+    except ValueError as error:
+
+        if uploaded_filename:
+            remove_profile_image(uploaded_filename)
+
+        if request.is_json:
+            return jsonify({"error": str(error)}), 400
+
+        flash(str(error), "danger")
+        return redirect(url_for("profile.edit_profile"))
 
     except SQLAlchemyError:
         db.session.rollback()
+
+        if uploaded_filename:
+            remove_profile_image(uploaded_filename)
 
         if request.is_json:
             return jsonify({
@@ -348,6 +523,10 @@ def edit_profile():
 
         flash("Could not save changes. Please try again.", "danger")
         return redirect(url_for("profile.edit_profile"))
+
+    # Remove old image only after successful database commit
+    if uploaded_filename and old_image_filename:
+        remove_profile_image(old_image_filename)
 
     if request.is_json:
         return jsonify({
@@ -359,7 +538,10 @@ def edit_profile():
     return redirect(url_for("profile.profile_page"))
 
 
-# View a public profile or update it if the logged-in user owns it
+# =====================================================
+# VIEW OR UPDATE PUBLIC PROFILE API
+# =====================================================
+
 @profile_bp.route(
     "/profile/<int:profile_id>",
     methods=["GET", "PUT", "PATCH"]
