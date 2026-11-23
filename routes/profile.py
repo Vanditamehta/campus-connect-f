@@ -20,7 +20,15 @@ from flask import (
 from sqlalchemy.exc import SQLAlchemyError
 
 from extensions import db
-from models import Profile, User, Post, Comment, Like, SocialLink
+from models import (
+    Profile,
+    User,
+    Post,
+    Comment,
+    Like,
+    SocialLink,
+    ProfileSection
+)
 
 
 profile_bp = Blueprint("profile", __name__)
@@ -33,12 +41,77 @@ ALLOWED_IMAGE_FORMATS = {
 
 MAX_SOCIAL_LINKS = 10
 
+PROFILE_SECTION_FIELDS = {
+    "education": {
+        "institution": 150,
+        "degree": 150,
+        "field_of_study": 150,
+        "graduation_year": 20,
+        "description": 2000
+    },
+    "experience": {
+        "title": 150,
+        "company": 150,
+        "employment_type": 100,
+        "location": 150,
+        "start_date": 30,
+        "end_date": 30,
+        "currently_working": 10,
+        "description": 2000
+    },
+    "projects": {
+        "name": 150,
+        "description": 2000,
+        "technologies": 500,
+        "project_url": 500
+    },
+    "certifications": {
+        "name": 150,
+        "issuing_organization": 150,
+        "issue_date": 30,
+        "expiration_date": 30,
+        "credential_id": 150,
+        "credential_url": 500
+    },
+    "courses": {
+        "name": 150,
+        "provider": 150,
+        "completion_date": 30,
+        "description": 2000
+    },
+    "achievements": {
+        "title": 150,
+        "issuer": 150,
+        "date": 30,
+        "description": 2000
+    },
+    "volunteer_experience": {
+        "role": 150,
+        "organization": 150,
+        "cause": 150,
+        "start_date": 30,
+        "end_date": 30,
+        "description": 2000
+    }
+}
+
+PROFILE_SECTION_REQUIRED_FIELDS = {
+    "education": "institution",
+    "experience": "title",
+    "projects": "name",
+    "certifications": "name",
+    "courses": "name",
+    "achievements": "title",
+    "volunteer_experience": "role"
+}
+
 
 # =====================================================
 # AUTHENTICATION
 # =====================================================
 
 def get_logged_in_user():
+
     user_id = session.get("user_id")
 
     if not user_id:
@@ -271,6 +344,93 @@ def validate_social_link(title, url):
 
 
 # =====================================================
+# PROFILE SECTION VALIDATION
+# =====================================================
+
+def validate_profile_section(section_type, data):
+
+    if section_type not in PROFILE_SECTION_FIELDS:
+        return None, "Invalid profile section type."
+
+    if not isinstance(data, dict):
+        return None, "Section information must be valid data."
+
+    allowed_fields = PROFILE_SECTION_FIELDS[section_type]
+    cleaned_data = {}
+
+    for field, value in data.items():
+
+        if field not in allowed_fields:
+            return None, f"Invalid field: {field}."
+
+        if field == "currently_working":
+
+            if isinstance(value, bool):
+                cleaned_data[field] = value
+                continue
+
+            if isinstance(value, str):
+                value = value.strip().lower()
+
+                if value in ("true", "1", "yes", "on"):
+                    cleaned_data[field] = True
+                    continue
+
+                if value in ("false", "0", "no", "off", ""):
+                    cleaned_data[field] = False
+                    continue
+
+            return None, "Currently working must be true or false."
+
+        if not isinstance(value, str):
+            return None, (
+                f"{field.replace('_', ' ').title()} must be text."
+            )
+
+        value = value.strip()
+
+        if len(value) > allowed_fields[field]:
+            return None, (
+                f"{field.replace('_', ' ').title()} cannot exceed "
+                f"{allowed_fields[field]} characters."
+            )
+
+        if value:
+            cleaned_data[field] = value
+
+    required_field = PROFILE_SECTION_REQUIRED_FIELDS[section_type]
+
+    if not cleaned_data.get(required_field):
+        return None, (
+            f"{required_field.replace('_', ' ').title()} is required."
+        )
+
+    for url_field in ("project_url", "credential_url"):
+
+        if url_field not in cleaned_data:
+            continue
+
+        try:
+            parsed_url = urlsplit(cleaned_data[url_field])
+
+            if (
+                parsed_url.scheme not in ("http", "https")
+                or not parsed_url.hostname
+                or parsed_url.username
+                or parsed_url.password
+            ):
+                return None, (
+                    f"Enter a valid URL for "
+                    f"{url_field.replace('_', ' ')}."
+                )
+
+        except ValueError:
+            return None, "Enter a valid URL."
+
+    return cleaned_data, None
+
+
+# =====================================================
 # SAVE PROFILE INFORMATION
 # =====================================================
 
@@ -331,6 +491,14 @@ def profile_response(profile):
                 "url": link.url
             }
             for link in profile.user.social_links
+        ],
+        "profile_sections": [
+            {
+                "id": section.id,
+                "section_type": section.section_type,
+                "data": section.data
+            }
+            for section in profile.user.profile_sections
         ]
     }
 
@@ -359,6 +527,13 @@ def profile_page():
         profile = Profile.query.filter_by(
             user_id=user.id
         ).first()
+
+        profile_sections = (
+            ProfileSection.query
+            .filter_by(user_id=user.id)
+            .order_by(ProfileSection.id.asc())
+            .all()
+        )
 
         if profile is None:
             flash("Please complete your profile.", "info")
@@ -392,6 +567,7 @@ def profile_page():
             "profile.html",
             profile=profile,
             user=user,
+            profile_sections=profile_sections,
             recent_posts=recent_posts,
             recent_comments=recent_comments,
             recent_reactions=recent_reactions
@@ -444,6 +620,7 @@ def profile_page():
     uploaded_filename = None
 
     try:
+
         if not request.is_json:
             uploaded_filename = save_profile_image(
                 request.files.get("profile_image")
@@ -468,6 +645,7 @@ def profile_page():
         return redirect(url_for("profile.edit_profile"))
 
     except SQLAlchemyError:
+
         db.session.rollback()
 
         if uploaded_filename:
@@ -551,6 +729,7 @@ def edit_profile():
     uploaded_filename = None
 
     try:
+
         if not request.is_json:
             uploaded_filename = save_profile_image(
                 request.files.get("profile_image")
@@ -575,6 +754,7 @@ def edit_profile():
         return redirect(url_for("profile.edit_profile"))
 
     except SQLAlchemyError:
+
         db.session.rollback()
 
         if uploaded_filename:
@@ -650,6 +830,7 @@ def get_profile(profile_id):
         return jsonify({"error": error}), 400
 
     try:
+
         save_profile_data(
             user,
             profile,
@@ -657,6 +838,7 @@ def get_profile(profile_id):
         )
 
     except SQLAlchemyError:
+
         db.session.rollback()
 
         return jsonify({
@@ -707,10 +889,12 @@ def add_social_link():
     )
 
     try:
+
         db.session.add(link)
         db.session.commit()
 
     except SQLAlchemyError:
+
         db.session.rollback()
         flash("Could not add your link. Please try again.", "danger")
         return redirect(url_for("profile.profile_page"))
@@ -758,9 +942,11 @@ def edit_social_link(link_id):
     link.url = validated["url"]
 
     try:
+
         db.session.commit()
 
     except SQLAlchemyError:
+
         db.session.rollback()
         flash("Could not update your link.", "danger")
         return redirect(url_for("profile.profile_page"))
@@ -796,13 +982,287 @@ def delete_social_link(link_id):
         return redirect(url_for("profile.profile_page"))
 
     try:
+
         db.session.delete(link)
         db.session.commit()
 
     except SQLAlchemyError:
+
         db.session.rollback()
         flash("Could not delete your link.", "danger")
         return redirect(url_for("profile.profile_page"))
 
     flash("Social link deleted successfully!", "success")
+    return redirect(url_for("profile.profile_page"))
+
+
+# =====================================================
+# ADD PROFILE SECTION
+# =====================================================
+
+@profile_bp.route("/profile/sections", methods=["POST"])
+def add_profile_section():
+
+    user = get_logged_in_user()
+
+    if user is None:
+
+        if request.is_json:
+            return jsonify({"error": "Please log in first."}), 401
+
+        flash("Please log in first.", "warning")
+        return redirect(url_for("auth.login"))
+
+    if request.is_json:
+        data = request.get_json(silent=True)
+
+        if not isinstance(data, dict):
+            return jsonify({"error": "Invalid section data."}), 400
+
+        section_type = data.get("section_type", "")
+        section_data = data.get("data", {})
+
+    else:
+        data = request.form
+        section_type = data.get("section_type", "")
+        section_data = {
+            key: value
+            for key, value in data.items()
+            if key != "section_type"
+        }
+
+    validated_data, error = validate_profile_section(
+        section_type,
+        section_data
+    )
+
+    if error:
+
+        if request.is_json:
+            return jsonify({"error": error}), 400
+
+        flash(error, "danger")
+        return redirect(url_for("profile.profile_page"))
+
+    section = ProfileSection(
+        user_id=user.id,
+        section_type=section_type,
+        data=validated_data
+    )
+
+    try:
+
+        db.session.add(section)
+        db.session.commit()
+
+    except SQLAlchemyError:
+
+        db.session.rollback()
+
+        if request.is_json:
+            return jsonify({
+                "error": "Could not add profile section."
+            }), 500
+
+        flash("Could not add profile section.", "danger")
+        return redirect(url_for("profile.profile_page"))
+
+    if request.is_json:
+        return jsonify({
+            "message": "Profile section added successfully.",
+            "section": {
+                "id": section.id,
+                "section_type": section.section_type,
+                "data": section.data
+            }
+        }), 201
+
+    flash("Profile section added successfully!", "success")
+    return redirect(url_for("profile.profile_page"))
+
+
+# =====================================================
+# EDIT PROFILE SECTION
+# =====================================================
+
+@profile_bp.route(
+    "/profile/sections/<int:section_id>/edit",
+    methods=["POST"]
+)
+def edit_profile_section(section_id):
+
+    user = get_logged_in_user()
+
+    if user is None:
+
+        if request.is_json:
+            return jsonify({"error": "Please log in first."}), 401
+
+        flash("Please log in first.", "warning")
+        return redirect(url_for("auth.login"))
+
+    section = db.session.get(ProfileSection, section_id)
+
+    if section is None:
+
+        if request.is_json:
+            return jsonify({
+                "error": "Profile section not found."
+            }), 404
+
+        flash("Profile section not found.", "danger")
+        return redirect(url_for("profile.profile_page"))
+
+    if section.user_id != user.id:
+
+        if request.is_json:
+            return jsonify({
+                "error": "You cannot edit someone else's profile section."
+            }), 403
+
+        flash("You cannot edit someone else's profile section.", "danger")
+        return redirect(url_for("profile.profile_page"))
+
+    if request.is_json:
+
+        data = request.get_json(silent=True)
+
+        if not isinstance(data, dict):
+            return jsonify({"error": "Invalid section data."}), 400
+
+        section_type = data.get("section_type", section.section_type)
+        incoming_data = data.get("data", {})
+
+    else:
+
+        data = request.form
+        section_type = section.section_type
+        incoming_data = dict(data)
+
+    if section_type != section.section_type:
+
+        if request.is_json:
+            return jsonify({
+                "error": "Section type cannot be changed."
+            }), 400
+
+        flash("Section type cannot be changed.", "danger")
+        return redirect(url_for("profile.profile_page"))
+
+    if not isinstance(incoming_data, dict):
+        return jsonify({"error": "Invalid section data."}), 400
+
+    merged_data = dict(section.data or {})
+    merged_data.update(incoming_data)
+
+    validated_data, error = validate_profile_section(
+        section_type,
+        merged_data
+    )
+
+    if error:
+
+        if request.is_json:
+            return jsonify({"error": error}), 400
+
+        flash(error, "danger")
+        return redirect(url_for("profile.profile_page"))
+
+    section.data = validated_data
+
+    try:
+
+        db.session.commit()
+
+    except SQLAlchemyError:
+
+        db.session.rollback()
+
+        if request.is_json:
+            return jsonify({
+                "error": "Could not update profile section."
+            }), 500
+
+        flash("Could not update profile section.", "danger")
+        return redirect(url_for("profile.profile_page"))
+
+    if request.is_json:
+        return jsonify({
+            "message": "Profile section updated successfully.",
+            "section": {
+                "id": section.id,
+                "section_type": section.section_type,
+                "data": section.data
+            }
+        }), 200
+
+    flash("Profile section updated successfully!", "success")
+    return redirect(url_for("profile.profile_page"))
+
+
+# =====================================================
+# DELETE PROFILE SECTION
+# =====================================================
+
+@profile_bp.route(
+    "/profile/sections/<int:section_id>/delete",
+    methods=["POST"]
+)
+def delete_profile_section(section_id):
+
+    user = get_logged_in_user()
+
+    if user is None:
+
+        if request.is_json:
+            return jsonify({"error": "Please log in first."}), 401
+
+        flash("Please log in first.", "warning")
+        return redirect(url_for("auth.login"))
+
+    section = db.session.get(ProfileSection, section_id)
+
+    if section is None:
+
+        if request.is_json:
+            return jsonify({
+                "error": "Profile section not found."
+            }), 404
+
+        flash("Profile section not found.", "danger")
+        return redirect(url_for("profile.profile_page"))
+
+    if section.user_id != user.id:
+
+        if request.is_json:
+            return jsonify({
+                "error": "You cannot delete someone else's profile section."
+            }), 403
+
+        flash("You cannot delete someone else's profile section.", "danger")
+        return redirect(url_for("profile.profile_page"))
+
+    try:
+
+        db.session.delete(section)
+        db.session.commit()
+
+    except SQLAlchemyError:
+
+        db.session.rollback()
+
+        if request.is_json:
+            return jsonify({
+                "error": "Could not delete profile section."
+            }), 500
+
+        flash("Could not delete profile section.", "danger")
+        return redirect(url_for("profile.profile_page"))
+
+    if request.is_json:
+        return jsonify({
+            "message": "Profile section deleted successfully."
+        }), 200
+
+    flash("Profile section deleted successfully!", "success")
     return redirect(url_for("profile.profile_page"))
