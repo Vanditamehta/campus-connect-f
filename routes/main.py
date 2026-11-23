@@ -10,7 +10,16 @@ from flask import (
 )
 
 from extensions import db
-from models import User, Profile, Connection, Post, Comment, Like
+
+from models import (
+    User,
+    Profile,
+    Connection,
+    Post,
+    Comment,
+    Like,
+    ProfileSection
+)
 
 
 main_bp = Blueprint("main", __name__)
@@ -30,7 +39,10 @@ def get_logged_in_user():
     return user
 
 
-# View another student's public profile
+# =====================================================
+# VIEW ANOTHER STUDENT'S PUBLIC PROFILE
+# =====================================================
+
 @main_bp.route("/people/profile/<int:user_id>", methods=["GET"])
 def public_profile(user_id):
 
@@ -49,6 +61,14 @@ def public_profile(user_id):
         return redirect(url_for("main.people"))
 
     is_owner = session.get("user_id") == student.id
+
+    # Fetch the student's profile sections
+    profile_sections = (
+        ProfileSection.query
+        .filter_by(user_id=student.id)
+        .order_by(ProfileSection.id.asc())
+        .all()
+    )
 
     # Fetch the student's recent posts
     recent_posts = (
@@ -82,15 +102,20 @@ def public_profile(user_id):
         profile=student_profile,
         user=student,
         is_owner=is_owner,
+        profile_sections=profile_sections,
         recent_posts=recent_posts,
         recent_comments=recent_comments,
         recent_reactions=recent_reactions
     )
 
 
-# Discover and search students
+# =====================================================
+# DISCOVER AND SEARCH STUDENTS
+# =====================================================
+
 @main_bp.route("/people", methods=["GET"])
 def people():
+
     current_user = get_logged_in_user()
 
     if current_user is None:
@@ -114,12 +139,15 @@ def people():
 
     # Filter students by skill
     if skill_query:
+
         filtered_users = []
 
         for user in users:
+
             profile = user.profile
 
             if profile and profile.skills:
+
                 skills = profile.skills
 
                 if isinstance(skills, str):
@@ -150,9 +178,13 @@ def people():
     )
 
 
-# Follow a student from the Discover Students page
+# =====================================================
+# FOLLOW A STUDENT
+# =====================================================
+
 @main_bp.route("/people/follow/<int:user_id>", methods=["POST"])
 def follow_user(user_id):
+
     current_user = get_logged_in_user()
 
     if current_user is None:
@@ -179,6 +211,7 @@ def follow_user(user_id):
         return redirect(url_for("main.people"))
 
     try:
+
         connection = Connection(
             follower_id=current_user.id,
             followed_id=user_id
@@ -187,18 +220,30 @@ def follow_user(user_id):
         db.session.add(connection)
         db.session.commit()
 
-        flash(f"You are now following {target_user.name}.", "success")
+        flash(
+            f"You are now following {target_user.name}.",
+            "success"
+        )
 
     except Exception:
+
         db.session.rollback()
-        flash("Unable to follow this student. Please try again.", "danger")
+
+        flash(
+            "Unable to follow this student. Please try again.",
+            "danger"
+        )
 
     return redirect(url_for("main.people"))
 
 
-# Unfollow a student
+# =====================================================
+# UNFOLLOW A STUDENT
+# =====================================================
+
 @main_bp.route("/people/unfollow/<int:user_id>", methods=["POST"])
 def unfollow_user(user_id):
+
     current_user = get_logged_in_user()
 
     if current_user is None:
@@ -215,21 +260,31 @@ def unfollow_user(user_id):
         return redirect(url_for("main.people"))
 
     try:
+
         db.session.delete(connection)
         db.session.commit()
 
         flash("Student unfollowed successfully.", "success")
 
     except Exception:
+
         db.session.rollback()
-        flash("Unable to unfollow this student.", "danger")
+
+        flash(
+            "Unable to unfollow this student.",
+            "danger"
+        )
 
     return redirect(url_for("main.people"))
 
 
-# View followers and following
+# =====================================================
+# VIEW FOLLOWERS AND FOLLOWING
+# =====================================================
+
 @main_bp.route("/connections", methods=["GET"])
 def connections():
+
     current_user = get_logged_in_user()
 
     if current_user is None:
@@ -254,8 +309,15 @@ def connections():
         for record in following_records
     ]
 
-    followers = [user for user in followers if user is not None]
-    following = [user for user in following if user is not None]
+    followers = [
+        user for user in followers
+        if user is not None
+    ]
+
+    following = [
+        user for user in following
+        if user is not None
+    ]
 
     return render_template(
         "connections.html",

@@ -25,6 +25,13 @@ class User(db.Model):
         order_by="SocialLink.id"
     )
 
+    profile_sections = db.relationship(
+        "ProfileSection",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        order_by="ProfileSection.id"
+    )
+
 
 class Profile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -41,7 +48,6 @@ class Profile(db.Model):
     specialization = db.Column(db.String(150), default="")
     bio = db.Column(db.Text, default="")
 
-    # Optional profile picture filename
     profile_image_filename = db.Column(
         db.String(255),
         nullable=True
@@ -74,6 +80,46 @@ class SocialLink(db.Model):
     user = db.relationship(
         "User",
         back_populates="social_links"
+    )
+
+
+class ProfileSection(db.Model):
+    __tablename__ = "profile_section"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    section_type = db.Column(
+        db.String(50),
+        nullable=False
+    )
+
+    data = db.Column(
+        db.JSON,
+        nullable=False
+    )
+
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc)
+    )
+
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc)
+    )
+
+    user = db.relationship(
+        "User",
+        back_populates="profile_sections"
     )
 
 
