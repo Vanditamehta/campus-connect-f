@@ -10,7 +10,7 @@ from flask import (
 )
 
 from extensions import db
-from models import User, Profile, Connection
+from models import User, Profile, Connection, Post, Comment, Like
 
 
 main_bp = Blueprint("main", __name__)
@@ -50,11 +50,41 @@ def public_profile(user_id):
 
     is_owner = session.get("user_id") == student.id
 
+    # Fetch the student's recent posts
+    recent_posts = (
+        Post.query
+        .filter_by(user_id=student.id)
+        .order_by(Post.created_at.desc(), Post.id.desc())
+        .limit(10)
+        .all()
+    )
+
+    # Fetch the student's recent comments
+    recent_comments = (
+        Comment.query
+        .filter_by(user_id=student.id)
+        .order_by(Comment.created_at.desc(), Comment.id.desc())
+        .limit(10)
+        .all()
+    )
+
+    # Fetch the student's recent reactions
+    recent_reactions = (
+        Like.query
+        .filter_by(user_id=student.id)
+        .order_by(Like.created_at.desc(), Like.id.desc())
+        .limit(10)
+        .all()
+    )
+
     return render_template(
         "profile.html",
         profile=student_profile,
         user=student,
-        is_owner=is_owner
+        is_owner=is_owner,
+        recent_posts=recent_posts,
+        recent_comments=recent_comments,
+        recent_reactions=recent_reactions
     )
 
 

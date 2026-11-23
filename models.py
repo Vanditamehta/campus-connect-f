@@ -18,6 +18,13 @@ class User(db.Model):
         cascade="all, delete-orphan"
     )
 
+    social_links = db.relationship(
+        "SocialLink",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        order_by="SocialLink.id"
+    )
+
 
 class Profile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -41,6 +48,33 @@ class Profile(db.Model):
     )
 
     user = db.relationship("User", back_populates="profile")
+
+
+class SocialLink(db.Model):
+    __tablename__ = "social_link"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    title = db.Column(
+        db.String(50),
+        nullable=False
+    )
+
+    url = db.Column(
+        db.String(500),
+        nullable=False
+    )
+
+    user = db.relationship(
+        "User",
+        back_populates="social_links"
+    )
 
 
 class Post(db.Model):

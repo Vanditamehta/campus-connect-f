@@ -15,8 +15,8 @@
     --surface: #FFFFFF;
     --card: #FFFFFF;
 
-    --primary: #C8553D;
-    --primary-light: #E47A60;
+    --primary: #d03617;
+    --primary-light: #ce3610;
     --primary-dark: #AD4632;
 
     --accent: #E0A458;
@@ -28,8 +28,8 @@
 
     --gradient: linear-gradient(
         135deg,
-        #C8553D,
-        #E47A60
+        #e04b2e,
+        #e06749
     );
 
     --background-gradient:
@@ -454,8 +454,8 @@ img {
             rgba(255, 255, 255, 0.12),
             transparent 30%
         ),
-        linear-gradient(120deg, #AD4632, #C8553D);
-    border: 1px solid rgba(200, 85, 61, 0.3);
+        linear-gradient(120deg, #af371f, #a7412c);
+    border: 1px solid rgba(177, 84, 65, 0.3);
     border-radius: var(--radius-lg);
 }
 
@@ -1566,7 +1566,7 @@ hr {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #C8553D;
+    color: #cc9f96;
     font-size: 3.5rem;
 }
 
@@ -1598,7 +1598,7 @@ hr {
 
 .profile-avatar i {
     font-size: 65px;
-    color: #C8553D;
+    color: #dc7c69;
 }
 
 /* ==========================================
@@ -1848,4 +1848,82 @@ hr {
 .feed-post-card .feed-comment-button .comment-count {
     color: #FFFFFF !important;
     font-weight: 700;
+}
+
+
+/* =====================================================
+   RECENT ACTIVITY - PROFILE
+   ===================================================== */
+
+.recent-activity {
+    padding-top: 25px;
+    border-top: 1px solid var(--border);
+}
+
+.recent-activity > div:first-child h3 {
+    color: var(--text);
+    font-weight: 800;
+}
+
+.activity-tabs .btn {
+    border-radius: 25px;
+    font-weight: 600;
+    padding: 9px 17px;
+}
+
+.activity-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    color: var(--text);
+}
+
+.activity-card .post-content {
+    color: var(--text);
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+
+.activity-card .post-image {
+    display: block;
+    max-width: 100%;
+    max-height: 420px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    margin: 0 auto;
+}
+
+.activity-original-post {
+    background: #FBF4ED;
+    border: 1px solid var(--border);
+    overflow-wrap: anywhere;
+}
+
+.activity-comment-content {
+    background: #FFF8F5;
+    border: 1px solid var(--border);
+    overflow-wrap: anywhere;
+}
+
+.activity-empty-state {
+    background: #FBF4ED;
+    border: 1px dashed var(--border);
+    border-radius: 16px;
+}
+
+.activity-empty-state h5 {
+    color: var(--text);
+    font-weight: 700;
+}
+
+@media (max-width: 576px) {
+    .activity-tabs .btn {
+        font-size: 0.85rem;
+        padding: 8px 12px;
+    }
+
+    .activity-card {
+        padding: 14px !important;
+    }
 }
