@@ -16,11 +16,20 @@
 
     <div id="feedMessage" class="alert d-none" role="alert"></div>
 
-    <!-- CREATE POST -->
+    <!-- CREATE POST PANEL -->
     {% if session.get('user_id') %}
-    <div class="search-card p-4 mb-5">
+    <div id="createPostPanel" class="search-card p-4 mb-5 d-none">
 
-        <h4 class="fw-bold mb-3">Share something with your campus</h4>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold mb-0">Share something with your campus</h4>
+
+            <button type="button"
+                    id="closeCreatePost"
+                    class="btn btn-sm btn-outline-secondary"
+                    aria-label="Close post composer">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
 
         <form id="createPostForm"
               method="POST"
@@ -54,7 +63,6 @@
                 </div>
             </div>
 
-            <!-- PHOTO UPLOAD -->
             <div class="mb-3">
                 <label for="postImage" class="form-label fw-semibold">
                     <i class="bi bi-image me-1"></i>
@@ -73,9 +81,7 @@
                     JPG, PNG or WEBP. Maximum 5 MB.
                 </small>
 
-                <div id="createImagePreviewContainer"
-                     class="mt-3 d-none">
-
+                <div id="createImagePreviewContainer" class="mt-3 d-none">
                     <img id="createImagePreview"
                          src=""
                          alt="Selected photo preview"
@@ -100,23 +106,7 @@
 
         </form>
     </div>
-
-    {% else %}
-
-    <div class="search-card p-4 mb-5 text-center">
-        <h4 class="fw-bold">Join the conversation</h4>
-
-        <p class="text-muted">
-            Log in to share updates and achievements with your campus.
-        </p>
-
-        <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
-            Login to Post
-        </a>
-    </div>
-
     {% endif %}
-
 
     <!-- FEED POSTS -->
     <div class="mb-4">
@@ -125,14 +115,14 @@
     </div>
 
     <div id="postsContainer"
-         class="row g-4"
+         class="row g-3 feed-posts"
          {% if not posts %}style="display:none;"{% endif %}>
 
         {% for post in posts %}
 
         {% set liked_state = namespace(value=false) %}
-        {% if session.get('user_id') %}
 
+        {% if session.get('user_id') %}
             {% for like in post.likes %}
                 {% if like.user_id == session.get('user_id') %}
                     {% set liked_state.value = true %}
@@ -142,18 +132,26 @@
 
         <div class="col-12 post-wrapper" id="post-{{ post.id }}">
 
-            <div class="connection-card p-4">
+            <div class="connection-card feed-post-card">
 
                 <!-- AUTHOR DETAILS -->
                 <div class="d-flex align-items-center gap-3 mb-3">
 
-                    <div class="connection-avatar">
-                        {{ post.author.name[:1]|upper }}
-                    </div>
+                    <a href="{{ url_for('main.public_profile', user_id=post.author.id) }}"
+                       class="feed-author-avatar-link text-decoration-none"
+                       aria-label="View {{ post.author.name }}'s profile">
+
+                        <div class="connection-avatar">
+                            {{ post.author.name[:1]|upper }}
+                        </div>
+                    </a>
 
                     <div>
                         <h5 class="fw-bold mb-1">
-                            {{ post.author.name }}
+                            <a href="{{ url_for('main.public_profile', user_id=post.author.id) }}"
+                               class="feed-author-name text-decoration-none">
+                                {{ post.author.name }}
+                            </a>
                         </h5>
 
                         <p class="small text-muted mb-0">
@@ -161,28 +159,10 @@
                         </p>
                     </div>
 
-                    <div class="ms-auto">
-                        <span class="skill-badge post-kind">
-
-                            {% if post.kind == "achievement" %}
-                                <i class="bi bi-trophy me-1"></i>Achievement
-                            {% else %}
-                                <i class="bi bi-chat-left-text me-1"></i>Status
-                            {% endif %}
-
-                        </span>
-                    </div>
-
                 </div>
 
-
-                <!-- POST TEXT -->
-                <p class="mb-3 post-content"
-                   {% if not post.content %}style="display:none;"{% endif %}>{{ post.content }}</p>
-
-
                 <!-- POST IMAGE -->
-                <div class="post-image-container mb-3"
+                <div class="post-image-container"
                      {% if not post.image_filename %}style="display:none;"{% endif %}>
 
                     {% if post.image_filename %}
@@ -190,19 +170,20 @@
                         src="{{ url_for('static', filename='uploads/' ~ post.image_filename) }}"
                         alt="Post photo"
                         class="img-fluid rounded post-image"
-                        style="max-height:500px; width:auto; max-width:100%; object-fit:contain;"
                     >
                     {% else %}
                     <img
                         src=""
                         alt="Post photo"
                         class="img-fluid rounded post-image"
-                        style="max-height:500px; width:auto; max-width:100%; object-fit:contain;"
                     >
                     {% endif %}
 
                 </div>
 
+                <!-- POST TEXT -->
+                <p class="post-content"
+                   {% if not post.content %}style="display:none;"{% endif %}>{{ post.content }}</p>
 
                 <!-- EDIT POST FORM -->
                 {% if session.get('user_id') == post.user_id %}
@@ -243,7 +224,6 @@
                         </select>
                     </div>
 
-
                     <!-- CURRENT PHOTO -->
                     <div class="edit-current-image mb-3"
                          {% if not post.image_filename %}style="display:none;"{% endif %}>
@@ -281,7 +261,6 @@
 
                     </div>
 
-
                     <!-- REPLACE PHOTO -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">
@@ -306,7 +285,6 @@
                         >
                     </div>
 
-
                     <button type="submit" class="btn btn-primary btn-sm">
                         <i class="bi bi-check-circle me-1"></i>Save Changes
                     </button>
@@ -317,7 +295,6 @@
                     </button>
 
                 </form>
-
 
                 <!-- OWNER CONTROLS -->
                 <div class="d-flex gap-2 post-actions mb-3">
@@ -336,7 +313,6 @@
                 </div>
 
                 {% endif %}
-
 
                 <!-- LIKE AND COMMENT ACTIONS -->
                 <div class="border-top border-bottom py-3 my-3">
@@ -372,19 +348,23 @@
                             {{ "like" if post.likes|length == 1 else "likes" }}
                         </span>
 
-                        <span class="small text-muted">
-                            <i class="bi bi-chat-dots me-1"></i>
-                            <strong class="comment-count">{{ post.comments|length }}</strong>
-                            {{ "comment" if post.comments|length == 1 else "comments" }}
-                        </span>
+                        <!-- SINGLE COMMENT BUTTON -->
+                        <button
+                            type="button"
+                            class="btn btn-sm feed-comment-button comment-toggle"
+                            aria-expanded="false"
+                            aria-label="Show or hide comments"
+                        >
+                            <i class="bi bi-chat-dots-fill me-1"></i>
+                            Comment (<span class="comment-count">{{ post.comments|length }}</span>)
+                        </button>
 
                     </div>
 
                 </div>
 
-
-                <!-- COMMENTS SECTION -->
-                <div class="comments-section">
+                <!-- COMMENTS: COLLAPSED INITIALLY -->
+                <div class="comments-section d-none">
 
                     <h6 class="fw-bold mb-3">
                         <i class="bi bi-chat-left-text me-1"></i>
@@ -463,7 +443,6 @@
 
                     </div>
 
-
                     <!-- ADD COMMENT -->
                     {% if session.get('user_id') %}
 
@@ -482,8 +461,7 @@
                                 required
                             >
 
-                            <button type="submit"
-                                    class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-send me-1"></i>Comment
                             </button>
 
@@ -506,7 +484,6 @@
 
                 </div>
 
-
                 <!-- POST DATE -->
                 <div class="border-top pt-3 mt-3">
                     <small class="text-muted">
@@ -521,7 +498,6 @@
         {% endfor %}
 
     </div>
-
 
     <!-- EMPTY FEED -->
     <div class="empty-state mt-4"
@@ -540,9 +516,20 @@
 
     </div>
 
+    <!-- FLOATING CREATE POST BUTTON -->
+    {% if session.get('user_id') %}
+    <button type="button"
+            id="openCreatePost"
+            class="feed-create-fab"
+            aria-controls="createPostPanel"
+            aria-expanded="false">
+        <i class="bi bi-plus-lg"></i>
+        <span>Create Your Post</span>
+    </button>
+    {% endif %}
+
 </div>
 {% endblock %}
-
 
 {% block scripts %}
 
@@ -551,9 +538,81 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const feedMessage = document.getElementById("feedMessage");
 
+    // CREATE POST PANEL OPEN AND CLOSE
+    const openCreatePostButton = document.getElementById("openCreatePost");
+    const closeCreatePostButton = document.getElementById("closeCreatePost");
+    const createPostPanel = document.getElementById("createPostPanel");
+
+    if (openCreatePostButton && createPostPanel) {
+
+        openCreatePostButton.addEventListener("click", function () {
+
+            createPostPanel.classList.remove("d-none");
+            openCreatePostButton.setAttribute("aria-expanded", "true");
+
+            createPostPanel.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
+
+            const postContentInput = document.getElementById("postContent");
+
+            if (postContentInput) {
+                postContentInput.focus();
+            }
+
+        });
+
+    }
+
+    if (closeCreatePostButton && createPostPanel) {
+
+        closeCreatePostButton.addEventListener("click", function () {
+
+            createPostPanel.classList.add("d-none");
+
+            if (openCreatePostButton) {
+                openCreatePostButton.setAttribute("aria-expanded", "false");
+            }
+
+        });
+
+    }
+
+    // COMMENT SECTION OPEN AND CLOSE
+    document.querySelectorAll(".comment-toggle").forEach(function (button) {
+
+        button.addEventListener("click", function () {
+
+            const card = this.closest(".feed-post-card");
+
+            if (!card) return;
+
+            const commentsSection = card.querySelector(".comments-section");
+
+            if (!commentsSection) return;
+
+            const willOpen = commentsSection.classList.contains("d-none");
+
+            commentsSection.classList.toggle("d-none", !willOpen);
+
+            this.setAttribute("aria-expanded", willOpen ? "true" : "false");
+
+            if (willOpen) {
+
+                const input = commentsSection.querySelector(".comment-input");
+
+                if (input) {
+                    input.focus();
+                }
+
+            }
+
+        });
+
+    });
 
     // DISPLAY MESSAGES
-
     function showMessage(message, type = "success") {
 
         feedMessage.textContent = message;
@@ -563,11 +622,10 @@ document.addEventListener("DOMContentLoaded", function () {
             behavior: "smooth",
             block: "nearest"
         });
+
     }
 
-
     // IMAGE VALIDATION
-
     function validateSelectedImage(file) {
 
         if (!file) return true;
@@ -589,15 +647,16 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         return true;
+
     }
 
-
     // UPDATE POST IMAGE
-
     function updatePostImage(card, filename) {
 
         const container = card.querySelector(".post-image-container");
         const image = card.querySelector(".post-image");
+
+        if (!container || !image) return;
 
         if (filename) {
 
@@ -610,11 +669,10 @@ document.addEventListener("DOMContentLoaded", function () {
             container.style.display = "none";
 
         }
+
     }
 
-
     // UPDATE EMPTY FEED
-
     function updateEmptyFeed() {
 
         const remainingPosts =
@@ -627,11 +685,10 @@ document.addEventListener("DOMContentLoaded", function () {
             postsContainer.style.display = "none";
             emptyFeed.style.display = "block";
         }
+
     }
 
-
     // CREATE POST IMAGE PREVIEW
-
     const createForm = document.getElementById("createPostForm");
 
     if (createForm) {
@@ -660,11 +717,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
             preview.src = URL.createObjectURL(file);
             previewContainer.classList.remove("d-none");
+
         });
 
-
         // REMOVE SELECTED IMAGE
-
         document.getElementById("removeCreateImage")
             .addEventListener("click", function () {
 
@@ -674,9 +730,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             });
 
-
         // CREATE POST
-
         createForm.addEventListener("submit", async function (event) {
 
             event.preventDefault();
@@ -727,9 +781,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     }
 
-
     // OPEN EDIT POST FORM
-
     document.querySelectorAll(".edit-post-btn").forEach(button => {
 
         button.addEventListener("click", function () {
@@ -746,9 +798,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 
-
     // CANCEL EDIT POST
-
     document.querySelectorAll(".cancel-edit").forEach(button => {
 
         button.addEventListener("click", function () {
@@ -770,9 +820,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 
-
     // EDIT POST IMAGE PREVIEW
-
     document.querySelectorAll(".edit-post-form").forEach(form => {
 
         const input = form.querySelector(".edit-image-input");
@@ -800,9 +848,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 
-
     // SAVE EDITED POST
-
     document.querySelectorAll(".edit-post-form").forEach(form => {
 
         form.addEventListener("submit", async function (event) {
@@ -825,13 +871,14 @@ document.addEventListener("DOMContentLoaded", function () {
             const removeImage =
                 this.querySelector(".remove-post-image").checked;
 
-            const currentImage =
-                card.querySelector(".post-image").getAttribute("src");
+            const imageElement = card.querySelector(".post-image");
+            const currentImage = imageElement ? imageElement.getAttribute("src") : "";
 
             if (!content && !image && (!currentImage || removeImage)) {
 
                 showMessage("A post must contain text or a photo.", "danger");
                 return;
+
             }
 
             if (!validateSelectedImage(image)) return;
@@ -869,13 +916,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 postContent.textContent = result.content;
                 postContent.style.display = result.content ? "block" : "none";
 
-                const kindBadge = card.querySelector(".post-kind");
-
-                kindBadge.innerHTML =
-                    result.kind === "achievement"
-                    ? '<i class="bi bi-trophy me-1"></i>Achievement'
-                    : '<i class="bi bi-chat-left-text me-1"></i>Status';
-
                 updatePostImage(card, result.image_filename);
 
                 this.classList.add("d-none");
@@ -900,9 +940,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 
-
     // DELETE POST
-
     document.querySelectorAll(".delete-post-btn").forEach(button => {
 
         button.addEventListener("click", async function () {
@@ -946,9 +984,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 
-
     // LIKE AND UNLIKE POSTS
-
     document.querySelectorAll(".like-button").forEach(button => {
 
         button.addEventListener("click", async function () {
@@ -1008,9 +1044,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 
-
     // ADD COMMENT
-
     document.querySelectorAll(".add-comment-form").forEach(form => {
 
         form.addEventListener("submit", async function (event) {
@@ -1067,9 +1101,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 
-
     // EDIT COMMENT
-
     document.querySelectorAll(".edit-comment-btn").forEach(button => {
 
         button.addEventListener("click", async function () {
@@ -1139,9 +1171,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 
-
     // DELETE COMMENT
-
     document.querySelectorAll(".delete-comment-btn").forEach(button => {
 
         button.addEventListener("click", async function () {
@@ -1178,15 +1208,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 const currentCount = parseInt(countElement.textContent, 10) || 0;
                 const newCount = Math.max(0, currentCount - 1);
 
+                // Update the number inside the single Comment button.
                 countElement.textContent = newCount;
-
-                const commentLabel =
-                    countElement.parentElement;
-
-                commentLabel.innerHTML =
-                    '<i class="bi bi-chat-dots me-1"></i>' +
-                    '<strong class="comment-count">' + newCount + '</strong> ' +
-                    (newCount === 1 ? "comment" : "comments");
 
                 const commentsList = card.querySelector(".comments-list");
 
