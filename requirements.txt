@@ -16,3 +16,4 @@ Werkzeug==3.1.9
 pillow==13.0.0
 gunicorn==27.0.1
 Flask-Migrate==4.1.0
+psycopg[binary]==3.3.9
