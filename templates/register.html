@@ -7,49 +7,176 @@
 
 <section class="auth-section">
     <div class="auth-card">
+
         <div class="auth-heading">
-            <div class="auth-icon"><i class="bi bi-person-plus"></i></div>
+            <div class="auth-icon">
+                <i class="bi bi-person-plus"></i>
+            </div>
             <h1>Join CampusConnect</h1>
             <p>Create your account and meet your campus community.</p>
         </div>
 
-        <form action="/register" method="POST">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show"
+                         role="alert">
+                        {{ message }}
+
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="alert"
+                                aria-label="Close">
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('auth.register') }}" method="POST">
+
+            <!-- Full Name -->
             <div class="mb-3">
                 <label for="name" class="form-label">Full name</label>
-                <input type="text" class="form-control" id="name"
-                       name="name" placeholder="Your full name" required>
+
+                <input
+                    type="text"
+                    class="form-control"
+                    id="name"
+                    name="name"
+                    placeholder="Your full name"
+                    maxlength="100"
+                    autocomplete="name"
+                    required
+                >
             </div>
 
+            <!-- Email -->
             <div class="mb-3">
                 <label for="email" class="form-label">Email address</label>
-                <input type="email" class="form-control" id="email"
-                       name="email" placeholder="you@example.com" required>
+
+                <input
+                    type="email"
+                    class="form-control"
+                    id="email"
+                    name="email"
+                    placeholder="you@example.com"
+                    maxlength="120"
+                    autocomplete="email"
+                    required
+                >
             </div>
 
+            <!-- Password -->
             <div class="mb-3">
                 <label for="password" class="form-label">Password</label>
-                <input type="password" class="form-control" id="password"
-                       name="password" minlength="8"
-                       placeholder="At least 8 characters" required>
+
+                <div class="input-group">
+                    <input
+                        type="password"
+                        class="form-control"
+                        id="password"
+                        name="password"
+                        minlength="8"
+                        placeholder="At least 8 characters"
+                        autocomplete="new-password"
+                        required
+                    >
+
+                    <button
+                        type="button"
+                        class="btn btn-outline-secondary password-toggle"
+                        data-target="password"
+                        aria-label="Show password"
+                        aria-pressed="false"
+                    >
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+
+                <small class="text-muted">
+                    Password must contain at least 8 characters.
+                </small>
             </div>
 
+            <!-- Confirm Password -->
             <div class="mb-4">
-                <label for="confirm_password" class="form-label">Confirm password</label>
-                <input type="password" class="form-control" id="confirm_password"
-                       name="confirm_password" minlength="8"
-                       placeholder="Enter password again" required>
+                <label for="confirm_password" class="form-label">
+                    Confirm password
+                </label>
+
+                <div class="input-group">
+                    <input
+                        type="password"
+                        class="form-control"
+                        id="confirm_password"
+                        name="confirm_password"
+                        minlength="8"
+                        placeholder="Enter password again"
+                        autocomplete="new-password"
+                        required
+                    >
+
+                    <button
+                        type="button"
+                        class="btn btn-outline-secondary password-toggle"
+                        data-target="confirm_password"
+                        aria-label="Show confirm password"
+                        aria-pressed="false"
+                    >
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
             </div>
 
+            <!-- Create Account -->
             <button type="submit" class="btn btn-primary w-100 py-2">
-                Create Account <i class="bi bi-arrow-right ms-2"></i>
+                Create Account
+                <i class="bi bi-arrow-right ms-2"></i>
             </button>
+
         </form>
 
-        <p class="auth-switch">
+        <p class="auth-switch mt-4">
             Already have an account?
-            <a href="/login">Login</a>
+            <a href="{{ url_for('auth.login') }}">Login</a>
         </p>
+
     </div>
 </section>
+
+<!-- Show/Hide Password -->
+<script>
+document.querySelectorAll(".password-toggle").forEach(function(button) {
+
+    button.addEventListener("click", function() {
+
+        const targetId = this.getAttribute("data-target");
+        const input = document.getElementById(targetId);
+        const icon = this.querySelector("i");
+
+        if (input.type === "password") {
+
+            input.type = "text";
+            icon.classList.replace("bi-eye", "bi-eye-slash");
+
+            this.setAttribute("aria-label", "Hide password");
+            this.setAttribute("aria-pressed", "true");
+
+        } else {
+
+            input.type = "password";
+            icon.classList.replace("bi-eye-slash", "bi-eye");
+
+            this.setAttribute("aria-label", "Show password");
+            this.setAttribute("aria-pressed", "false");
+
+        }
+
+    });
+
+});
+</script>
 
 {% endblock %}
