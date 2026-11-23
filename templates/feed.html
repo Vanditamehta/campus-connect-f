@@ -36,6 +36,8 @@
               action="{{ url_for('posts.create_post') }}"
               enctype="multipart/form-data">
 
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
             <div class="mb-3">
                 <label for="postKind" class="form-label">Post type</label>
                 <select class="form-select" id="postKind" name="kind">
@@ -167,7 +169,7 @@
 
                     {% if post.image_filename %}
                     <img
-                        src="{{ url_for('static', filename='uploads/' ~ post.image_filename) }}"
+                        src="{{ get_image_url(post.image_filename) }}"
                         alt="Post photo"
                         class="img-fluid rounded post-image"
                     >
@@ -234,7 +236,7 @@
 
                         {% if post.image_filename %}
                         <img
-                            src="{{ url_for('static', filename='uploads/' ~ post.image_filename) }}"
+                            src="{{ get_image_url(post.image_filename) }}"
                             alt="Current post photo"
                             class="img-fluid rounded edit-image-preview"
                             style="max-height:200px;"
@@ -348,7 +350,6 @@
                             {{ "like" if post.likes|length == 1 else "likes" }}
                         </span>
 
-                        <!-- SINGLE COMMENT BUTTON -->
                         <button
                             type="button"
                             class="btn btn-sm feed-comment-button comment-toggle"
@@ -363,7 +364,7 @@
 
                 </div>
 
-                <!-- COMMENTS: COLLAPSED INITIALLY -->
+                <!-- COMMENTS -->
                 <div class="comments-section d-none">
 
                     <h6 class="fw-bold mb-3">
@@ -538,6 +539,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const feedMessage = document.getElementById("feedMessage");
 
+    // CSRF PROTECTION FOR JAVASCRIPT REQUESTS
+    const csrfToken = document.querySelector(
+        'meta[name="csrf-token"]'
+    )?.getAttribute("content");
+
+    async function csrfFetch(url, options = {}) {
+
+        const headers = new Headers(options.headers || {});
+
+        if (csrfToken) {
+            headers.set("X-CSRFToken", csrfToken);
+        }
+
+        return fetch(url, {
+            ...options,
+            headers: headers
+        });
+
+    }
+
     // CREATE POST PANEL OPEN AND CLOSE
     const openCreatePostButton = document.getElementById("openCreatePost");
     const closeCreatePostButton = document.getElementById("closeCreatePost");
@@ -651,16 +672,16 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // UPDATE POST IMAGE
-    function updatePostImage(card, filename) {
+    function updatePostImage(card, imageUrl) {
 
         const container = card.querySelector(".post-image-container");
         const image = card.querySelector(".post-image");
 
         if (!container || !image) return;
 
-        if (filename) {
+        if (imageUrl) {
 
-            image.src = "/static/uploads/" + encodeURIComponent(filename);
+            image.src = imageUrl;
             container.style.display = "block";
 
         } else {
@@ -755,7 +776,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             try {
 
-                const response = await fetch(this.action, {
+                const response = await csrfFetch(this.action, {
                     method: "POST",
                     body: formData
                 });
@@ -900,7 +921,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             try {
 
-                const response = await fetch(this.dataset.editUrl, {
+                const response = await csrfFetch(this.dataset.editUrl, {
                     method: "POST",
                     body: formData
                 });
@@ -916,7 +937,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 postContent.textContent = result.content;
                 postContent.style.display = result.content ? "block" : "none";
 
-                updatePostImage(card, result.image_filename);
+                updatePostImage(card, result.image_url);
 
                 this.classList.add("d-none");
 
@@ -957,7 +978,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             try {
 
-                const response = await fetch(this.dataset.deleteUrl, {
+                const response = await csrfFetch(this.dataset.deleteUrl, {
                     method: "POST"
                 });
 
@@ -999,7 +1020,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             try {
 
-                const response = await fetch(requestUrl, {
+                const response = await csrfFetch(requestUrl, {
                     method: "POST"
                 });
 
@@ -1070,7 +1091,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             try {
 
-                const response = await fetch(this.dataset.commentUrl, {
+                const response = await csrfFetch(this.dataset.commentUrl, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -1137,7 +1158,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             try {
 
-                const response = await fetch(this.dataset.editUrl, {
+                const response = await csrfFetch(this.dataset.editUrl, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -1189,7 +1210,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             try {
 
-                const response = await fetch(this.dataset.deleteUrl, {
+                const response = await csrfFetch(this.dataset.deleteUrl, {
                     method: "POST"
                 });
 
@@ -1208,7 +1229,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 const currentCount = parseInt(countElement.textContent, 10) || 0;
                 const newCount = Math.max(0, currentCount - 1);
 
-                // Update the number inside the single Comment button.
                 countElement.textContent = newCount;
 
                 const commentsList = card.querySelector(".comments-list");

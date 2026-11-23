@@ -291,11 +291,12 @@ def login():
     return redirect(url_for("home"))
 
 
+
 # --------------------------------------------------
 # LOGOUT
 # --------------------------------------------------
 
-@auth_bp.route("/logout", methods=["GET", "POST"])
+@auth_bp.route("/logout", methods=["POST"])
 def logout():
 
     session.clear()

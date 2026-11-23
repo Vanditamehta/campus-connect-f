@@ -1,7 +1,8 @@
 
 from flask import Flask, render_template
 from config import Config
-from extensions import db, migrate
+from extensions import db, migrate, csrf
+from image_storage import get_image_url
 
 from routes.auth import auth_bp
 from routes.profile import profile_bp
@@ -22,9 +23,13 @@ def create_app(test_config=None):
     if test_config:
         app.config.update(test_config)
 
-    # Initialize database and migrations
+    # Make image URL helper available in all Jinja templates
+    app.jinja_env.globals["get_image_url"] = get_image_url
+
+    # Initialize database, migrations and CSRF protection
     db.init_app(app)
     migrate.init_app(app, db)
+    csrf.init_app(app)
 
     # Register application routes
     app.register_blueprint(auth_bp)

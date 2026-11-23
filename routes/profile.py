@@ -20,6 +20,11 @@ from flask import (
 from sqlalchemy.exc import SQLAlchemyError
 
 from extensions import db
+from image_storage import (
+    store_image,
+    get_image_url,
+    delete_image
+)
 from models import (
     Profile,
     User,
@@ -150,15 +155,12 @@ def save_profile_image(image_file):
         image_file.stream.seek(0)
 
         extension = ALLOWED_IMAGE_FORMATS[image_format]
-        filename = f"{uuid.uuid4().hex}{extension}"
 
-        upload_folder = current_app.config["UPLOAD_FOLDER"]
-        os.makedirs(upload_folder, exist_ok=True)
-
-        image_path = os.path.join(upload_folder, filename)
-        image_file.save(image_path)
-
-        return filename
+        return store_image(
+            image_file,
+            folder="profile_images",
+            extension=extension
+        )
 
     except ValueError:
         raise
@@ -178,20 +180,7 @@ def remove_profile_image(filename):
     if not filename:
         return
 
-    safe_filename = os.path.basename(filename)
-
-    upload_folder = current_app.config["UPLOAD_FOLDER"]
-    image_path = os.path.join(upload_folder, safe_filename)
-
-    try:
-        if os.path.isfile(image_path):
-            os.remove(image_path)
-
-    except OSError:
-        current_app.logger.warning(
-            "Could not remove old profile image: %s",
-            safe_filename
-        )
+    delete_image(filename)
 
 
 # =====================================================
@@ -467,13 +456,9 @@ def save_profile_data(
 
 def profile_response(profile):
 
-    image_url = None
-
-    if profile.profile_image_filename:
-        image_url = url_for(
-            "static",
-            filename=f"uploads/{profile.profile_image_filename}"
-        )
+    image_url = get_image_url(
+        profile.profile_image_filename
+    )
 
     return {
         "id": profile.id,
@@ -1137,7 +1122,13 @@ def edit_profile_section(section_id):
 
         data = request.form
         section_type = section.section_type
-        incoming_data = dict(data)
+
+        # Do not include the CSRF token in profile section data.
+        incoming_data = {
+            key: value
+            for key, value in data.items()
+            if key != "csrf_token"
+        }
 
     if section_type != section.section_type:
 
@@ -1154,6 +1145,13 @@ def edit_profile_section(section_id):
 
     merged_data = dict(section.data or {})
     merged_data.update(incoming_data)
+
+    # HTML does not submit unchecked checkboxes.
+    # Save False explicitly when the experience checkbox is unchecked.
+    if section_type == "experience" and not request.is_json:
+        merged_data["currently_working"] = (
+            request.form.get("currently_working") == "true"
+        )
 
     validated_data, error = validate_profile_section(
         section_type,

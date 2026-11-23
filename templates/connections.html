@@ -208,6 +208,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const searchInput = document.getElementById("connectionSearch");
     const messageBox = document.getElementById("connectionMessage");
 
+    // Read CSRF token from base.html
+    const csrfToken = document.querySelector(
+        'meta[name="csrf-token"]'
+    )?.getAttribute("content");
+
     function showMessage(message, type) {
         messageBox.textContent = message;
         messageBox.className = "alert alert-" + type + " mt-4";
@@ -269,7 +274,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 const response = await fetch("/api/unfollow/" + userId, {
                     method: "POST",
                     headers: {
-                        "Accept": "application/json"
+                        "Accept": "application/json",
+                        "X-CSRFToken": csrfToken
                     },
                     credentials: "same-origin"
                 });

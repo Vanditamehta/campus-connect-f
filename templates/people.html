@@ -219,6 +219,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const noSearchResults = document.getElementById("noSearchResults");
     const messageBox = document.getElementById("peopleMessage");
 
+    // Read CSRF token from base.html
+    const csrfToken = document.querySelector(
+        'meta[name="csrf-token"]'
+    )?.getAttribute("content");
+
     // Live filtering of students already returned by Flask
     function filterStudents() {
 
@@ -284,7 +289,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 const response = await fetch(endpoint, {
                     method: "POST",
                     headers: {
-                        "Accept": "application/json"
+                        "Accept": "application/json",
+                        "X-CSRFToken": csrfToken
                     },
                     credentials: "same-origin"
                 });

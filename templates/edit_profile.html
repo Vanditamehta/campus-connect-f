@@ -27,6 +27,9 @@
             enctype="multipart/form-data"
         >
 
+            <!-- CSRF Protection -->
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
             <!-- Profile Picture Upload -->
             <div class="profile-upload-section mb-4 text-center">
 
@@ -36,7 +39,7 @@
 
                         <img
                             id="profileImagePreview"
-                            src="{{ url_for('static', filename='uploads/' ~ profile.profile_image_filename) }}"
+                            src="{{ get_image_url(profile.profile_image_filename) }}"
                             alt="Your profile picture"
                         >
 
