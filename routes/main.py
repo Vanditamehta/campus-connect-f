@@ -52,13 +52,11 @@ def public_profile(user_id):
         flash("Student not found.", "danger")
         return redirect(url_for("main.people"))
 
+    # Profile may be None if the student has not
+    # created a profile yet. Still show their public page.
     student_profile = Profile.query.filter_by(
         user_id=student.id
     ).first()
-
-    if student_profile is None:
-        flash("This student has not created a profile yet.", "info")
-        return redirect(url_for("main.people"))
 
     is_owner = session.get("user_id") == student.id
 

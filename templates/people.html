@@ -98,7 +98,14 @@
                             </div>
 
                             <div class="student-details">
-                                <h3>{{ student.name }}</h3>
+                                <h3>
+                                    <a
+                                        href="{{ url_for('main.public_profile', user_id=student.id) }}"
+                                        class="text-decoration-none text-reset"
+                                    >
+                                        {{ student.name }}
+                                    </a>
+                                </h3>
 
                                 <p>
                                     {{ student.headline or "CampusConnect Student" }}
