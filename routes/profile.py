@@ -1013,7 +1013,7 @@ def add_profile_section():
         section_data = {
             key: value
             for key, value in data.items()
-            if key != "section_type"
+            if key not in ("section_type", "csrf_token")
         }
 
     validated_data, error = validate_profile_section(
