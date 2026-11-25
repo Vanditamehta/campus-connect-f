@@ -3,6 +3,8 @@ CampusConnect – Student Networking Platform
 CampusConnect is a student networking web application that enables college students to create profiles, share posts, discover other students, and build connections within their campus community.
 
 Live Application: https://campus-connect-f.onrender.com
+
+
 GitHub Repository: https://github.com/Vanditamehta/campus-connect-f
 
 1. Project Objectives
