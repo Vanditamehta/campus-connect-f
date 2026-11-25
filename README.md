@@ -1,84 +1,176 @@
-# CampusConnect
+CampusConnect – Student Networking Platform
 
-Student networking platform developed using Git, GitHub and DevOps practices.
+CampusConnect is a student networking web application that enables college students to create profiles, share posts, discover other students, and build connections within their campus community.
 
-CampusConnect is a Flask-based REST API that lets students register, create profiles and showcase their skills. It was built as a team project to practice real-world software development workflows: feature branches, issue tracking, pull requests with peer review, and continuous integration.
+Live Application: https://campus-connect-f.onrender.com
+GitHub Repository: https://github.com/Vanditamehta/campus-connect-f
 
-## Features
-
-- **Home route:** confirms the API is running
-- **Register:** user registration with input validation (name and email required)
-- **Profiles:** create and view student profiles (name, skills, specialization, bio)
-- **Automated tests:** written with pytest
-- **CI pipeline:** GitHub Actions runs all tests on every push and pull request
-
-## Tech Stack
-
-- Python 3.11
-- Flask
-- pytest
-- Git and GitHub
-- GitHub Actions
-
-## Project Structure
-
-```
+1. Project Objectives
+Provide a centralised platform for student networking.
+Enable students to create and manage profiles.
+Support sharing posts and updates.
+Help students discover and connect with peers.
+Apply software development and DevOps practices.
+2. Key Features
+User registration and login.
+Student profile creation and editing.
+Posts and activity feed.
+Student discovery.
+Connection management.
+Responsive web interface.
+3. Technology Stack
+Component	Technology
+Frontend	HTML, CSS, 
+Template Engine	Jinja2
+Backend	Python 3.11, Flask
+Database	PostgreSQL, SQLite (local development)
+SQLAlchemy
+Image Storage	Cloudinary
+Testing	pytest
+Version Control	Git
+Repository Hosting	GitHub
+Continuous Integration	GitHub Actions
+Application Hosting	Render
+4. Project Structure
 campus-connect-f/
-├── .github/workflows/ci.yml   # CI workflow
+│
+├── app.py
+├── config.py
+├── extensions.py
+├── models.py
+├── requirements.txt
+│
 ├── routes/
-│   ├── auth.py                # register route
-│   └── profile.py             # profile routes
-├── tests/                     # pytest test files
-├── app.py                     # Flask app entry point
-├── conftest.py
-└── requirements.txt
-```
+│   ├── __init__.py
+│   ├── auth.py
+│   ├── profile.py
+│   ├── posts.py
+│   ├── connections.py
+│   └── main.py
+│
+├── templates/
+│   ├── base.html
+│   ├── index.html
+│   ├── login.html
+│   ├── register.html
+│   ├── feed.html
+│   ├── profile.html
+│   ├── edit_profile.html
+│   ├── people.html
+│   └── connections.html
+│
+├── static/
+│   └── css/
+│       └── style.css
+│
+├── tests/
+│   ├── conftest.py
+│   ├── test_basic.py
+│   ├── test_auth.py
+│   ├── test_profile.py
+│   ├── test_posts.py
+│   └── test_connections.py
+│
+└── .github/
+    └── workflows/
+        └── ci.yml
 
-## Getting Started
+Directory Overview
+File / Directory	Description
+app.py	Main Flask application entry point.
+config.py	Application and environment configuration.
+extensions.py	Initialisation of Flask extensions.
+models.py	Database models.
+requirements.txt	Project dependencies.
+routes/	Backend routes organised by functionality.
+templates/	HTML and Jinja templates.
+static/	Static assets and stylesheets.
+tests/	Automated test cases.
+.github/workflows/ci.yml	GitHub Actions CI configuration.
+5. Installation and Setup
+Python 3.11
+Git
+Visual Studio Code
+Clone the Repository
+bash
+git clone https://github.com/Vanditamehta/campus-connect-f.git
+cd campus-connect-f
 
-1. Clone the repository:
-```bash
-   git clone https://github.com/Vanditamehta/campus-connect-f.git
-   cd campus-connect-f
-```
-2. Install dependencies:
-```bash
-   pip install -r requirements.txt
-```
-3. Run the app:
-```bash
-   python app.py
-```
-4. Run the tests:
-```bash
-   pytest
-```
+Create and Activate Virtual Environment
+bash
+python3 -m venv .venv
+source .venv/bin/activate
 
-## API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/` | Check that the API is running |
-| POST | `/register` | Register a new user (`name`, `email`) |
-| POST | `/profile` | Create a profile (`name`, `skills`, optional `specialization`, `bio`) |
-| GET | `/profile/<id>` | View a profile by ID |
+For Windows:
 
-## Team and Responsibilities
+bash
+.venv\Scripts\activate
 
-| Member | Responsibility | Branch |
-|--------|----------------|--------|
-| Vandita Mehta | Project setup, CI pipeline, register feature | `feature/auth` |
-| Bhavini | Profile feature | `feature/profile` |
-| Dhruvi | Testing and blog feature | `feature/blog` |
+Install Dependencies
+bash
+pip install -r requirements.txt
 
-## Git Workflow Followed
+Configure Environment Variables
 
-1. Repository created on GitHub, and teammates added as collaborators
-2. Tasks divided and tracked using **GitHub Issues**
-3. Each feature built on its own **branch**, with small commits and clear messages
-4. Changes merged into `main` through **pull requests**, reviewed by a teammate
-5. **GitHub Actions** ran the tests automatically on every push and pull request
+Configure the required environment variables for the application, including database credentials, Flask secret key, and Cloudinary credentials.
 
-## Known Limitations
+Sensitive credentials should not be committed to the repository.
 
-Data is stored in in-memory lists, so it resets when the server restarts. Moving to a SQLite database is the planned next step.
+Run the Application
+bash
+python app.py
+
+
+6. Testing
+
+The project uses pytest for automated testing.
+
+Test files are organised by application functionality:
+
+test_basic.py – Basic application tests.
+test_auth.py – Authentication tests.
+test_profile.py – Profile tests.
+test_posts.py – Post-related tests.
+test_connections.py – Connection-related tests.
+
+Run all tests:
+
+bash
+pytest -v
+
+
+Run a specific test file:
+
+bash
+pytest tests/test_auth.py
+
+7. DevOps and SCM
+
+The project incorporates DevOps practices to improve code management, testing, and application delivery.
+
+Source Code Management: Git and GitHub are used for version control, commits, branching, and collaboration.
+Continuous Integration: GitHub Actions automates the configured checks and test execution on repository events.
+Automated Testing: pytest validates application functionality and helps identify errors early.
+Deployment: Render is used to host and deploy the web application.
+
+The CI workflow is maintained in:
+
+text
+.github/workflows/ci.yml
+
+8. Security and Configuration
+Environment variables are used to manage sensitive configuration.
+Flask secret key supports secure session management.
+CSRF protection is used for supported form submissions.
+PostgreSQL is configured for production data storage.
+Cloudinary provides external image storage.
+9. Future Enhancements
+Advanced student discovery and filtering.
+Improved networking and collaboration features.
+Additional notification options.
+Expanded automated test coverage.
+Performance monitoring and accessibility improvements.
+10. Conclusion
+
+CampusConnect demonstrates the development of a student networking platform using Flask and modern web technologies. The project also applies Software Configuration Management, automated testing, Continuous Integration, and cloud hosting practices to support a structured software development workflow.
